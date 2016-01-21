@@ -1,761 +1,377 @@
-function CoordCube() {
-	this.N_MOVES = 18;
-	this.N_MOVES2 = 10;
-
-	this.N_SLICE = 495;
-	this.N_TWIST = 2187;
-	this.N_TWIST_SYM = 324;
-	this.N_FLIP = 2048;
-	this.N_FLIP_SYM = 336;
-	this.N_PERM = 40320;
-	this.N_PERM_SYM = 2768;
-	this.N_MPERM = 24;
-	this.N_COMB = 70;
-	this.N_UDSLICEFLIP_SYM = 64430;
-
-	this.N_HUGE = N_UDSLICEFLIP_SYM * N_TWIST * 70;// 9,863,588,700
-	this.N_FULL_5 = N_UDSLICEFLIP_SYM * N_TWIST / 5;
-	this.N_HUGE_16 = (N_HUGE + 15) / 16;
-	this.N_HUGE_5 = N_HUGE / 5;// 1,972,717,740
-
-	//XMove = Move Table
-	//XPrun = Pruning Table
-	//XConj = Conjugate Table
-
-	//full phase1
-	this.UDSliceFlipMove = Search.USE_FULL_PRUN ? mat(N_UDSLICEFLIP_SYM, N_MOVES) : null;
-	this.TwistMoveF = Search.USE_FULL_PRUN ? mat(N_TWIST, N_MOVES) : null;
-	this.TwistConj = Search.USE_FULL_PRUN ? mat(N_TWIST, 16) : null;
-	this.UDSliceFlipTwistPrunP; //Search.USE_FULL_PRUN ? new byte[N_UDSLICEFLIP_SYM * N_TWIST / 5] : null;
-	this.HugePrunP; //Search.USE_HUGE_PRUN ? new byte[N_HUGE_5] : null;
-
-	//phase1
-	this.UDSliceMove = mat(N_SLICE, N_MOVES);
-	this.TwistMove = mat(N_TWIST_SYM, N_MOVES);
-	this.FlipMove = mat(N_FLIP_SYM, N_MOVES);
-	this.UDSliceConj = mat(N_SLICE, 8);
-	this.UDSliceTwistPrun = new Array(N_SLICE * N_TWIST_SYM / 8 + 1);
-	this.UDSliceFlipPrun = new Array(N_SLICE * N_FLIP_SYM / 8);
-	this.TwistFlipPrun = Search.USE_TWIST_FLIP_PRUN ? new Array(N_FLIP * N_TWIST_SYM / 8) : undefined;
-
-	//phase2
-	this.CPermMove = mat(N_PERM_SYM, N_MOVES);
-	this.EPermMove = mat(N_PERM_SYM, N_MOVES2);
-	this.MPermMove = mat(N_MPERM, N_MOVES2);
-	this.MPermConj = mat(N_MPERM, 16);
-	this.CCombMove = mat(N_COMB, N_MOVES);
-	this.CCombConj = mat(N_COMB, 16);
-	this.MCPermPrun = new Array(N_MPERM * N_PERM_SYM / 8);
-	this.MEPermPrun = new Array(N_MPERM * N_PERM_SYM / 8);
-	this.EPermCCombPrun = new Array(N_COMB * N_PERM_SYM / 8);
-
-	this.setPruning = function(table, index, value) {
-		table[index >> 3] ^= (0xf ^ value) << ((index & 7) << 2);
-	}
-
-	this.getPruning = function(table, index) {
-		return table[index >> 3] >> ((index & 7) << 2) & 0xf;
-	}
-
-	this.setPruning2 = function(table, index, value) {
-		table[index >> 4] ^= (0x3 ^ value) << ((index & 0xf) << 1);
-	}
-
-	this.getPruning2 = function(int[] table, long index) {
-		return table[(int) (index >> 4)] >> ((index & 0xf) << 1) & 0x3;
-	}
-
-	this.tri2bin = (function(){
-		var arr = [];
-		for (int i = 0; i < 243; i++) {
-			int val = 0;
-			int l = i;
-			for (int j = 0; j < 5; j++) {
-				val |= (l % 3) << (j << 1);
-				l /= 3;
-			}
-			arr[i] = String.fromCharCode(97 + val);
-		}
-		return arr;
-	})();
-
-	this.getPruningP = function(table, index, THRESHOLD) {
-		if (index < THRESHOLD) {
-			return this.tri2bin[tableindex >> 2)] & 0xff] >> ((index & 3) << 1) & 3;
-		} else {
-			return this.tri2bin[table[index - THRESHOLD] & 0xff] >> 8 & 3;
-		}
-	}
-
-	// TODO !!
-	static void packPrunTable(int[] PrunTable, ByteBuffer buf, final long PACKED_SIZE) {
-		for (long i = 0; i < PACKED_SIZE; i++) {
-			int n = 1;
-			int value = 0;
-			for (int j = 0; j < 4; j++) {
-				value += n * getPruning2(PrunTable, i << 2 | j);
-				n *= 3;
-			}
-			value += n * getPruning2(PrunTable, (PACKED_SIZE << 2) + i);
-			buf.put((byte) value);
-		}
-	}
-
-	static void initUDSliceMoveConj() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_SLICE; i++) {
-			c.setUDSlice(i);
-			for (int j = 0; j < N_MOVES; j += 3) {
-				CubieCube.EdgeMult(c, CubieCube.moveCube[j], d);
-				UDSliceMove[i][j] = (char) d.getUDSlice();
-			}
-			for (int j = 0; j < 16; j += 2) {
-				CubieCube.EdgeConjugate(c, CubieCube.SymInv[j], d);
-				UDSliceConj[i][j >> 1] = (char) (d.getUDSlice() & 0x1ff);
-			}
-		}
-		for (int i = 0; i < N_SLICE; i++) {
-			for (int j = 0; j < N_MOVES; j += 3) {
-				int udslice = UDSliceMove[i][j];
-				for (int k = 1; k < 3; k++) {
-					int cx = UDSliceMove[udslice & 0x1ff][j];
-					udslice = Util.permMult[udslice >> 9][cx >> 9] << 9 | cx & 0x1ff;
-					UDSliceMove[i][j + k] = (char) udslice;
-				}
-			}
-		}
-	}
-
-	static void initFlipMove() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_FLIP_SYM; i++) {
-			c.setFlip(CubieCube.FlipS2R[i]);
-			for (int j = 0; j < N_MOVES; j++) {
-				CubieCube.EdgeMult(c, CubieCube.moveCube[j], d);
-				FlipMove[i][j] = (char) d.getFlipSym();
-			}
-		}
-	}
-
-	static void initTwistMove() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_TWIST_SYM; i++) {
-			c.setTwist(CubieCube.TwistS2R[i]);
-			for (int j = 0; j < N_MOVES; j++) {
-				CubieCube.CornMult(c, CubieCube.moveCube[j], d);
-				TwistMove[i][j] = (char) d.getTwistSym();
-			}
-		}
-	}
-
-	static void initCPermMove() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_PERM_SYM; i++) {
-			c.setCPerm(CubieCube.EPermS2R[i]);
-			for (int j = 0; j < N_MOVES; j++) {
-				CubieCube.CornMult(c, CubieCube.moveCube[j], d);
-				CPermMove[i][j] = (char) d.getCPermSym();
-			}
-		}
-	}
-
-	static void initEPermMove() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_PERM_SYM; i++) {
-			c.setEPerm(CubieCube.EPermS2R[i]);
-			for (int j = 0; j < N_MOVES2; j++) {
-				CubieCube.EdgeMult(c, CubieCube.moveCube[Util.ud2std[j]], d);
-				EPermMove[i][j] = (char) d.getEPermSym();
-			}
-		}
-	}
-
-	static void initMPermMoveConj() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_MPERM; i++) {
-			c.setMPerm(i);
-			for (int j = 0; j < N_MOVES2; j++) {
-				CubieCube.EdgeMult(c, CubieCube.moveCube[Util.ud2std[j]], d);
-				MPermMove[i][j] = (char) d.getMPerm();
-			}
-			for (int j = 0; j < 16; j++) {
-				CubieCube.EdgeConjugate(c, CubieCube.SymInv[j], d);
-				MPermConj[i][j] = (char) d.getMPerm();
-			}
-		}
-	}
-
-	static void initCombMoveConj() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_COMB; i++) {
-			c.setCComb(i);
-			for (int j = 0; j < N_MOVES; j++) {
-				CubieCube.CornMult(c, CubieCube.moveCube[j], d);
-				CCombMove[i][j] = (char) d.getCComb();
-			}
-			for (int j = 0; j < 16; j++) {
-				CubieCube.CornConjugate(c, CubieCube.SymInv[j], d);
-				CCombConj[i][j] = (char) d.getCComb();
-			}
-		}
-	}
-
-	static void initUDSliceFlipMove() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_UDSLICEFLIP_SYM; i++) {
-			c.setUDSliceFlip(CubieCube.UDSliceFlipS2R[i]);
-			int udslice = CubieCube.UDSliceFlipS2R[i] >> 11;
-			for (int j = 0; j < N_MOVES; j++) {
-				CubieCube.EdgeMult(c, CubieCube.moveCube[j], d);
-				// UDSliceFlipMove[i][j] = d.getUDSliceFlipSym();
-
-				int flip = d.getFlipSym();
-				int fsym = flip & 0x7;
-				flip >>= 3;
-				int udsliceflip = CubieCube.FlipSlice2UDSliceFlip[flip * N_SLICE + UDSliceConj[UDSliceMove[udslice][j] & 0x1ff][fsym]];
-				UDSliceFlipMove[i][j] = udsliceflip & 0xfffffff0 | CubieCube.SymMult[udsliceflip & 0xf][fsym << 1];
-			}
-		}
-	}
-
-	static void initTwistMoveConj() {
-		CubieCube c = new CubieCube();
-		CubieCube d = new CubieCube();
-		for (int i = 0; i < N_TWIST; i++) {
-			c.setTwist(i);
-			for (int j = 0; j < N_MOVES; j += 3) {
-				CubieCube.CornMult(c, CubieCube.moveCube[j], d);
-				TwistMoveF[i][j] = (char) d.getTwist();
-			}
-			for (int j = 0; j < 16; j++) {
-				CubieCube.CornConjugate(c, CubieCube.SymInv[j], d);
-				TwistConj[i][j] = (char) d.getTwist();
-			}
-		}
-		for (int i = 0; i < N_TWIST; i++) {
-			for (int j = 0; j < N_MOVES; j += 3) {
-				int twist = TwistMoveF[i][j];
-				for (int k = 1; k < 3; k++) {
-					twist = TwistMoveF[twist][j];
-					TwistMoveF[i][j + k] = (char) twist;
-				}
-			}
-		}
-	}
-
-	static void initTwistFlipPrun() {
-		int depth = 0;
-		int done = 1;
-		boolean inv;
-		int select;
-		int check;
-		final int N_SIZE = N_FLIP * N_TWIST_SYM;
-		for (int i = 0; i < N_SIZE / 8; i++) {
-			TwistFlipPrun[i] = -1;
-		}
-		setPruning(TwistFlipPrun, 0, 0);
-
-		while (done < N_SIZE) {
-			inv = depth > 6;
-			select = inv ? 0xf : depth;
-			check = inv ? depth : 0xf;
-			depth++;
-			int val = 0;
-			for (int i = 0; i < N_SIZE; i++, val >>= 4) {
-				if ((i & 7) == 0) {
-					val = TwistFlipPrun[i >> 3];
-					if (!inv && val == -1) {
-						i += 7;
-						continue;
-					}
-				}
-				if ((val & 0xf) != select) {
-					continue;
-				}
-				int twist = i >> 11;
-				int flip = CubieCube.FlipR2S[i & 0x7ff];
-				int fsym = flip & 7;
-				flip >>= 3;
-				for (int m = 0; m < N_MOVES; m++) {
-					int twistx = TwistMove[twist][m];
-					int tsymx = twistx & 7;
-					twistx >>= 3;
-					int flipx = FlipMove[flip][CubieCube.Sym8Move[m << 3 | fsym]];
-					int fsymx = CubieCube.Sym8MultInv[CubieCube.Sym8Mult[flipx & 7 | fsym << 3] << 3 | tsymx];
-					flipx >>= 3;
-					int idx = twistx << 11 | CubieCube.FlipS2RF[flipx << 3 | fsymx];
-					if (getPruning(TwistFlipPrun, idx) != check) {
-						continue;
-					}
-					done++;
-					if (inv) {
-						setPruning(TwistFlipPrun, i, depth);
-						break;
-					}
-					setPruning(TwistFlipPrun, idx, depth);
-					char sym = CubieCube.SymStateTwist[twistx];
-					if (sym == 1) {
-						continue;
-					}
-					for (int k = 0; k < 8; k++) {
-						if ((sym & 1 << k) == 0) {
-							continue;
-						}
-						int idxx = twistx << 11 | CubieCube.FlipS2RF[flipx << 3 | CubieCube.Sym8MultInv[fsymx << 3 | k]];
-						if (getPruning(TwistFlipPrun, idxx) == 0xf) {
-							setPruning(TwistFlipPrun, idxx, depth);
-							done++;
-						}
-					}
-				}
-			}
-			// System.out.println(String.format("%2d%10d", depth, done));
-		}
-	}
-
-	static void initRawSymPrun(int[] PrunTable, final int INV_DEPTH,
-							   final char[][] RawMove, final char[][] RawConj,
-							   final char[][] SymMove, final char[] SymState,
-							   final int PrunFlag) {
-
-		final int SYM_SHIFT = PrunFlag & 0xf;
-		final boolean SymSwitch = ((PrunFlag >> 4) & 1) == 1;
-		final boolean MoveMapSym = ((PrunFlag >> 5) & 1) == 1;
-		final boolean MoveMapRaw = ((PrunFlag >> 6) & 1) == 1;
-
-		final int SYM_MASK = (1 << SYM_SHIFT) - 1;
-		final int N_RAW = RawMove.length;
-		final int N_SYM = SymMove.length;
-		final int N_SIZE = N_RAW * N_SYM;
-		final int N_MOVES = MoveMapRaw ? 10 : RawMove[0].length;
-
-		for (int i = 0; i < (N_RAW * N_SYM + 7) / 8; i++) {
-			PrunTable[i] = -1;
-		}
-		setPruning(PrunTable, 0, 0);
-
-		int depth = 0;
-		int done = 1;
-
-		while (done < N_SIZE) {
-			boolean inv = depth > INV_DEPTH;
-			int select = inv ? 0xf : depth;
-			int check = inv ? depth : 0xf;
-			depth++;
-			int val = 0;
-			for (int i = 0; i < N_SIZE; i++, val >>= 4) {
-				if ((i & 7) == 0) {
-					val = PrunTable[i >> 3];
-					if (!inv && val == -1) {
-						i += 7;
-						continue;
-					}
-				}
-				if ((val & 0xf) != select) {
-					continue;
-				}
-				int raw = i % N_RAW;
-				int sym = i / N_RAW;
-				for (int m = 0; m < N_MOVES; m++) {
-					int symx = SymMove[sym][MoveMapSym ? Util.ud2std[m] : m];
-					int rawx = RawConj[RawMove[raw][MoveMapRaw ? Util.ud2std[m] : m] & 0x1ff][symx & SYM_MASK];
-					symx >>= SYM_SHIFT;
-					int idx = symx * N_RAW + rawx;
-					if (getPruning(PrunTable, idx) != check) {
-						continue;
-					}
-					done++;
-					if (inv) {
-						setPruning(PrunTable, i, depth);
-						break;
-					}
-					setPruning(PrunTable, idx, depth);
-					for (int j = 1, symState = SymState[symx]; (symState >>= 1) != 0; j++) {
-						if ((symState & 1) != 1) {
-							continue;
-						}
-						int idxx = symx * N_RAW + RawConj[rawx][j ^ (SymSwitch ? CubieCube.e2c[j] : 0)];
-						if (getPruning(PrunTable, idxx) == 0xf) {
-							setPruning(PrunTable, idxx, depth);
-							done++;
-						}
-					}
-				}
-			}
-			// System.out.println(String.format("%2d%10d", depth, done));
-		}
-	}
-
-	static boolean loadPrunPTable(byte[] table, String fileName) {
-		final int length = table.length;
-		try {
-			RandomAccessFile raf = new RandomAccessFile(fileName, "r");
-			FileChannel channel = raf.getChannel();
-			MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, length);
-			for (int i = 0; i < length; i++) {
-				table[i] = buffer.get();
-			}
-			raf.close();
-			return true;
-		} catch (FileNotFoundException e) {
-			// e.printStackTrace();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
-		return false;
-	}
-
-	static void packAndSavePrunPTable(int[] table, String fileName, int FILE_SIZE) {
-		try {
-			RandomAccessFile raf = new RandomAccessFile(fileName, "rw");
-			raf.setLength(FILE_SIZE);
-			FileChannel channel = raf.getChannel();
-			MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, 0, FILE_SIZE);
-			packPrunTable(table, buffer, FILE_SIZE);
-			raf.close();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
-	}
-
-	private this.MAXDEPTH = 15;
-
-	static void initUDSliceFlipTwistPrun() {
-		UDSliceFlipTwistPrunP = new byte[N_FULL_5];
-		if (loadPrunPTable(UDSliceFlipTwistPrunP, "FullTable.prunP")) {
-			return;
-		}
-		UDSliceFlipTwistPrunP = null;
-		int[] UDSliceFlipTwistPrun = new int[N_UDSLICEFLIP_SYM * N_TWIST / 16 + 1];
-
-		final int N_SIZE = N_TWIST * N_UDSLICEFLIP_SYM;
-
-		for (int i = 0; i < (N_SIZE + 15) / 16; i++) {
-			UDSliceFlipTwistPrun[i] = -1;
-		}
-		setPruning2(UDSliceFlipTwistPrun, 0, 0);
-
-		int depth = 0;
-		int done = 1;
-
-		while (done < N_SIZE) {
-			boolean inv = depth > 8;
-			int select = inv ? 0x3 : depth % 3;
-			int check = inv ? depth % 3 : 0x3;
-			depth++;
-			int depm3 = depth % 3;
-			if (depth >= MAXDEPTH) {
-				break;
-			}
-			for (int i = 0; i < N_SIZE;) {
-				int val = UDSliceFlipTwistPrun[i >> 4];
-				if (!inv && val == -1) {
-					i += 16;
-					continue;
-				}
-				for (int end = Math.min(i + 16, N_SIZE); i < end; i++, val >>= 2) {
-					if ((val & 0x3) != select) {
-						continue;
-					}
-					int raw = i % N_TWIST;
-					int sym = i / N_TWIST;
-					for (int m = 0; m < N_MOVES; m++) {
-						int symx = UDSliceFlipMove[sym][m];
-						int rawx = TwistConj[TwistMoveF[raw][m]][symx & 0xf];
-						symx >>= 4;
-						int idx = symx * N_TWIST + rawx;
-						if (getPruning2(UDSliceFlipTwistPrun, idx) != check) {
-							continue;
-						}
-						done++;
-						if (inv) {
-							setPruning2(UDSliceFlipTwistPrun, i, depm3);
-							break;
-						}
-						setPruning2(UDSliceFlipTwistPrun, idx, depm3);
-						for (int j = 1, symState = CubieCube.SymStateUDSliceFlip[symx]; (symState >>= 1) != 0; j++) {
-							if ((symState & 1) != 1) {
-								continue;
-							}
-							int idxx = symx * N_TWIST + TwistConj[rawx][j];
-							if (getPruning2(UDSliceFlipTwistPrun, idxx) == 0x3) {
-								setPruning2(UDSliceFlipTwistPrun, idxx, depm3);
-								done++;
-							}
-						}
-					}
-				}
-			}
-			System.out.println(String.format("%2d%10d", depth, done));
-		}
-
-		packAndSavePrunPTable(UDSliceFlipTwistPrun, "FullTable.prunP", N_FULL_5);
-		UDSliceFlipTwistPrun = null;
-		UDSliceFlipTwistPrunP = new byte[N_FULL_5];
-		if (!loadPrunPTable(UDSliceFlipTwistPrunP, "FullTable.prunP")) {
-			System.out.println("Error Loading FullTable.prunP");
-			throw new RuntimeException("Error Loading FullTable.prunP");
-		}
-	}
-
-	static void initHugePrun() {
-		HugePrunP = new byte[N_HUGE_5];
-		if (loadPrunPTable(HugePrunP, "HugeTable.prunP")) {
-			return;
-		}
-		HugePrunP = null;
-
-		final long N_SIZE = N_HUGE;
-		final long N_RAW = N_TWIST * N_COMB;
-
-		int[] HugePrun = new int[N_HUGE_16];
-
-		for (int i = 0; i < N_HUGE_16; i++) {
-			HugePrun[i] = -1;
-		}
-		setPruning2(HugePrun, 0, 0);
-
-		int depth = 0;
-		long done = 1;
-
-		while (done < N_SIZE) {
-			boolean inv = depth > 9;
-			int select = inv ? 0x3 : depth % 3;
-			int check = inv ? depth % 3 : 0x3;
-			depth++;
-			int depm3 = depth % 3;
-			for (long i = 0; i < N_SIZE;) {
-				int val = HugePrun[(int) (i >> 4)];
-				if (!inv && val == -1) {
-					i += 16;
-					continue;
-				}
-				for (long end = Math.min(i + 16, N_SIZE); i < end; i++, val >>= 2) {
-					if ((val & 0x3) != select) {
-						continue;
-					}
-					int raw = (int) (i % N_RAW);
-					int sym = (int) (i / N_RAW);
-					for (int m = 0; m < N_MOVES; m++) {
-						int symx = UDSliceFlipMove[sym][m];
-						int rawx = TwistConj[TwistMoveF[raw / N_COMB][m]][symx & 0xf] * N_COMB + CCombConj[CCombMove[raw % N_COMB][m]][symx & 0xf];
-						symx >>= 4;
-						long idx = symx * N_RAW + rawx;
-						if (getPruning2(HugePrun, idx) != check) {
-							continue;
-						}
-						done++;
-						if ((done & 0x1fffff) == 0) {
-							System.out.print(done + "\r");
-						}
-						if (inv) {
-							setPruning2(HugePrun, i, depm3);
-							break;
-						}
-						setPruning2(HugePrun, idx, depm3);
-						for (int j = 1, symState = CubieCube.SymStateUDSliceFlip[symx]; (symState >>= 1) != 0; j++) {
-							if ((symState & 1) != 1) {
-								continue;
-							}
-							long idxx = symx * N_RAW + TwistConj[rawx / N_COMB][j] * N_COMB + CCombConj[rawx % N_COMB][j];
-							if (getPruning2(HugePrun, idxx) == 0x3) {
-								setPruning2(HugePrun, idxx, depm3);
-								done++;
-							}
-						}
-					}
-				}
-			}
-			System.out.println(String.format("%2d%12d", depth, done));
-		}
-
-		packAndSavePrunPTable(HugePrun, "HugeTable.prunP", N_HUGE_5);
-		HugePrun = null;
-		HugePrunP = new byte[N_HUGE_5];
-		if (!loadPrunPTable(HugePrunP, "HugeTable.prunP")) {
-			System.out.println("Error Loading HugeTable.prunP");
-			throw new RuntimeException("Error Loading HugeTable.prunP");
-		}
-	}
-
-	static void initSliceTwistPrun() {
-		initRawSymPrun(
-			UDSliceTwistPrun, 6,
-			UDSliceMove, UDSliceConj,
-			TwistMove, CubieCube.SymStateTwist, 0x3
-		);
-	}
-
-	static void initSliceFlipPrun() {
-		initRawSymPrun(
-			UDSliceFlipPrun, 6,
-			UDSliceMove, UDSliceConj,
-			FlipMove, CubieCube.SymStateFlip, 0x3
-		);
-	}
-
-	static void initMEPermPrun() {
-		initRawSymPrun(
-			MEPermPrun, 7,
-			MPermMove, MPermConj,
-			EPermMove, CubieCube.SymStatePerm, 0x4
-		);
-	}
-
-	static void initMCPermPrun() {
-		initRawSymPrun(
-			MCPermPrun, 10,
-			MPermMove, MPermConj,
-			CPermMove, CubieCube.SymStatePerm, 0x34
-		);
-	}
-
-	static void initPermCombPrun() {
-		initRawSymPrun(
-			EPermCCombPrun, 8,
-			CCombMove, CCombConj,
-			EPermMove, CubieCube.SymStatePerm, 0x44
-		);
-	}
-
-
-	int twist;
-	int tsym;
-	int flip;
-	int fsym;
-	int slice;
-	int prun;
-
-	CoordCube() { }
-
-	CoordCube(CoordCube cc) {
-		set(cc);
-	}
-
-	void set(CoordCube node) {
-		this.twist = node.twist;
-		this.tsym = node.tsym;
-		this.flip = node.flip;
-		this.fsym = node.fsym;
-		this.slice = node.slice;
-		this.prun = node.prun;
-	}
-
-	int getPackedPruning(boolean isPhase1) {
-		int prunm3 = 0;
-		if (Search.USE_HUGE_PRUN && !isPhase1) {
-			prunm3 = getPruningP(HugePrunP, flip * ((long) N_TWIST) * N_COMB + TwistConj[twist][fsym] * N_COMB + CCombConj[tsym][fsym], N_HUGE_5 * 4L);
-		} else {
-			prunm3 = getPruningP(UDSliceFlipTwistPrunP, flip * N_TWIST + TwistConj[twist][fsym], N_UDSLICEFLIP_SYM * N_TWIST / 5 * 4);
-		}
-		prun = 0;
-		CoordCube tmp1 = new CoordCube();
-		CoordCube tmp2 = new CoordCube();
-		tmp1.set(this);
-		tmp1.prun = prunm3;
-		while (tmp1.twist != 0 || tmp1.flip != 0 || tmp1.tsym != 0 && !isPhase1) {
-			++prun;
-			if (tmp1.prun == 0) {
-				tmp1.prun = 3;
-			}
-			for (int m = 0; m < 18; m++) {
-				int gap = tmp2.doMovePrun(tmp1, m, isPhase1);
-				if (gap < tmp1.prun) {
-					tmp1.set(tmp2);
-					break;
-				}
-			}
-		}
-		return prun;
-	}
-
-	void calcPruning(boolean isPhase1) {
-		if (Search.USE_FULL_PRUN || Search.USE_HUGE_PRUN) {
-			getPackedPruning(isPhase1);
-		} else {
-			prun = Math.max(
-					   Math.max(
-						   getPruning(UDSliceTwistPrun,
-									  twist * N_SLICE + UDSliceConj[slice & 0x1ff][tsym]),
-						   getPruning(UDSliceFlipPrun,
-									  flip * N_SLICE + UDSliceConj[slice & 0x1ff][fsym])),
-					   Search.USE_TWIST_FLIP_PRUN ? getPruning(TwistFlipPrun,
-							   twist << 11 | CubieCube.FlipS2RF[flip << 3 | CubieCube.Sym8MultInv[fsym << 3 | tsym]]) : 0);
-		}
-	}
-
-	void set(CubieCube cc) {
-		if (Search.USE_FULL_PRUN || Search.USE_HUGE_PRUN) {
-			twist = cc.getTwist();
-			flip = cc.getUDSliceFlipSym();
-			slice = cc.getUDSlice();
-			fsym = flip & 0xf;
-			flip >>= 4;
-			if (Search.USE_HUGE_PRUN) {
-				tsym = cc.getCComb(); //tsym -> CComb
-			}
-		} else {
-			twist = cc.getTwistSym();
-			flip = cc.getFlipSym();
-			slice = cc.getUDSlice();
-			tsym = twist & 7;
-			twist = twist >> 3;
-			fsym = flip & 7;
-			flip = flip >> 3;
-		}
-	}
-
-	/**
-	 * @return
-	 *	  0: Success
-	 *	  1: Try Next Power
-	 *	  2: Try Next Axis
-	 */
-	int doMovePrun(CoordCube cc, int m, boolean isPhase1) {
-		if (Search.USE_FULL_PRUN) {
-			twist = TwistMoveF[cc.twist][m];
-			flip = UDSliceFlipMove[cc.flip][CubieCube.SymMove[cc.fsym][m]];
-			fsym = CubieCube.SymMult[flip & 0xf][cc.fsym];
-			flip >>= 4;
-
-			int prunm3;
-			if (Search.USE_HUGE_PRUN && !isPhase1) {
-				tsym = CCombMove[cc.tsym][m];
-				prunm3 = getPruningP(HugePrunP,
-									 flip * ((long) N_TWIST) * N_COMB + TwistConj[twist][fsym] * N_COMB + CCombConj[tsym][fsym], N_HUGE_5 * 4L);
-			} else {
-				prunm3 = getPruningP(UDSliceFlipTwistPrunP,
-									 flip * N_TWIST + TwistConj[twist][fsym], N_FULL_5 * 4);
-			}
-			prun = ((0x49249249 << prunm3 >> cc.prun) & 3) + cc.prun - 1;
-		} else {
-			slice = UDSliceMove[cc.slice & 0x1ff][m] & 0x1ff;
-
-			flip = FlipMove[cc.flip][CubieCube.Sym8Move[m << 3 | cc.fsym]];
-			fsym = CubieCube.Sym8Mult[flip & 7 | cc.fsym << 3];
-			flip >>= 3;
-
-			twist = TwistMove[cc.twist][CubieCube.Sym8Move[m << 3 | cc.tsym]];
-			tsym = CubieCube.Sym8Mult[twist & 7 | cc.tsym << 3];
-			twist >>= 3;
-
-			prun = Math.max(
-					   Math.max(
-						   getPruning(UDSliceTwistPrun,
-									  twist * N_SLICE + UDSliceConj[slice][tsym]),
-						   getPruning(UDSliceFlipPrun,
-									  flip * N_SLICE + UDSliceConj[slice][fsym])),
-					   Search.USE_TWIST_FLIP_PRUN ? getPruning(TwistFlipPrun,
-							   twist << 11 | CubieCube.FlipS2RF[flip << 3 | CubieCube.Sym8MultInv[fsym << 3 | tsym]]) : 0);
-		}
-		return prun;
+var CoordCube = function(cubieCube) {
+	if (typeof cubieCube !== 'undefined') {
+		this.twist = c.getTwist();
+		this.flip = c.getFlip();
+		this.parity = c.cornerParity();
+		this.FRtoBR = c.getFRtoBR();
+		this.URFtoDLF = c.getURFtoDLF();
+		this.URtoUL = c.getURtoUL();
+		this.UBtoDF = c.getUBtoDF();
+		this.URtoDF = c.getURtoDF();
+	} else {
+		this.twist = undefined;
+		this.flip = undefined;
+		this.parity = undefined;
+		this.FRtoBR = undefined;
+		this.URFtoDLF = undefined;
+		this.URtoUL = undefined;
+		this.UBtoDF = undefined;
+		this.URtoDF = undefined;
 	}
 }
+
+CoordCube.N_TWIST = 2187;// 3^7 possible corner orientations
+CoordCube.N_FLIP = 2048;// 2^11 possible edge flips
+CoordCube.N_SLICE1 = 495;// 12 choose 4 possible positions of FR,FL,BL,BR edges
+CoordCube.N_SLICE2 = 24;// 4! permutations of FR,FL,BL,BR edges in phase2
+CoordCube.N_PARITY = 2; // 2 possible corner parities
+CoordCube.N_URFtoDLF = 20160;// 8!/(8-6)! permutation of URF,UFL,ULB,UBR,DFR,DLF corners
+CoordCube.N_FRtoBR = 11880; // 12!/(12-4)! permutation of FR,FL,BL,BR edges
+CoordCube.N_URtoUL = 1320; // 12!/(12-3)! permutation of UR,UF,UL edges
+CoordCube.N_UBtoDF = 1320; // 12!/(12-3)! permutation of UB,DR,DF edges
+CoordCube.N_URtoDF = 20160; // 8!/(8-6)! permutation of UR,UF,UL,UB,DR,DF edges in phase2
+
+CoordCube.N_URFtoDLB = 40320;// 8! permutations of the corners
+CoordCube.N_URtoBR = 479001600;// 8! permutations of the corners
+
+CoordCube.N_MOVE = 18;
+
+
+// A move on the coordinate level
+CoordCube.prototype.move = function(m) {
+	this.twist = CoordCube.twistMove[this.twist][m];
+	this.flip = CoordCube.flipMove[this.flip][m];
+	this.parity = CoordCube.parityMove[this.parity][m];
+	this.FRtoBR = CoordCube.FRtoBR_Move[this.FRtoBR][m];
+	this.URFtoDLF = CoordCube.URFtoDLF_Move[this.URFtoDLF][m];
+	this.URtoUL = CoordCube.URtoUL_Move[this.URtoUL][m];
+	this.UBtoDF = CoordCube.UBtoDF_Move[this.UBtoDF][m];
+	if (this.URtoUL < 336 && this.UBtoDF < 336) {// updated only if UR,UF,UL,UB,DR,DF
+		// are not in UD-slice
+		this.URtoDF = CoordCube.MergeURtoULandUBtoDF[this.URtoUL][this.UBtoDF];
+	}
+}
+
+// ******************************************Phase 1 move tables*****************************************************
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Move table for the twists of the corners
+// twist < 2187 in phase 2.
+// twist = 0 in phase 2.
+CoordCube.twistMove = [];
+var a = new CubieCube();
+for (var i = 0; i < CoordCube.N_TWIST; i++) {
+	a.setTwist(i);
+	CoordCube.twistMove[i] = [];
+	for (var j = 0; j < 6; j++) {
+		for (var k = 0; k < 3; k++) {
+			a.cornerMultiply(CubieCube.moveCube[j]);
+			CoordCube.twistMove[i][3 * j + k] = a.getTwist();
+		}
+		a.cornerMultiply(CubieCube.moveCube[j]);// 4. faceturn restores
+		// a
+	}
+}
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Move table for the flips of the edges
+// flip < 2048 in phase 1
+// flip = 0 in phase 2.
+CoordCube.flipMove = [];
+var a = new CubieCube();
+for (var i = 0; i < CoordCube.N_FLIP; i++) {
+	a.setFlip(i);
+	CoordCube.flipMove[i] = [];
+	for (var j = 0; j < 6; j++) {
+		for (var k = 0; k < 3; k++) {
+			a.edgeMultiply(CubieCube.moveCube[j]);
+			CoordCube.flipMove[i][3 * j + k] = a.getFlip();
+		}
+		a.edgeMultiply(CubieCube.moveCube[j]);
+		// a
+	}
+}
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Parity of the corner permutation. This is the same as the parity for the edge permutation of a valid cube.
+// parity has values 0 and 1
+CoordCube.parityMove = [
+	[1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 0, 1],
+	[0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0]
+];
+
+// ***********************************Phase 1 and 2 movetable********************************************************
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Move table for the four UD-slice edges FR, FL, Bl and BR
+// FRtoBRMove < 11880 in phase 1
+// FRtoBRMove < 24 in phase 2
+// FRtoBRMove = 0 for solved cube
+CoordCube.FRtoBR_Move = [];
+var a = new CubieCube();
+for (var i = 0; i < CoordCube.N_FRtoBR; i++) {
+	a.setFRtoBR(i);
+	CoordCube.FRtoBR_Move[i] = [];
+	for (var j = 0; j < 6; j++) {
+		for (var k = 0; k < 3; k++) {
+			a.edgeMultiply(CubieCube.moveCube[j]);
+			CoordCube.FRtoBR_Move[i][3 * j + k] = a.getFRtoBR();
+		}
+		a.edgeMultiply(CubieCube.moveCube[j]);
+	}
+}
+
+
+// *******************************************Phase 1 and 2 movetable************************************************
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Move table for permutation of six corners. The positions of the DBL and DRB corners are determined by the parity.
+// URFtoDLF < 20160 in phase 1
+// URFtoDLF < 20160 in phase 2
+// URFtoDLF = 0 for solved cube.
+CoordCube.URFtoDLF_Move = [];
+var a = new CubieCube();
+for (var i = 0; i < CoordCube.N_URFtoDLF; i++) {
+	a.setURFtoDLF(i);
+	CoordCube.URFtoDLF_Move[i] = [];
+	for (var j = 0; j < 6; j++) {
+		for (var k = 0; k < 3; k++) {
+			a.cornerMultiply(CubieCube.moveCube[j]);
+			CoordCube.URFtoDLF_Move[i][3 * j + k] = a.getURFtoDLF();
+		}
+		a.cornerMultiply(CubieCube.moveCube[j]);
+	}
+}
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Move table for the permutation of six U-face and D-face edges in phase2. The positions of the DL and DB edges are
+// determined by the parity.
+// URtoDF < 665280 in phase 1
+// URtoDF < 20160 in phase 2
+// URtoDF = 0 for solved cube.
+CoordCube.URtoDF_Move = [];
+var a = new CubieCube();
+for (var i = 0; i < CoordCube.N_URtoDF; i++) {
+	a.setURtoDF(i);
+	CoordCube.URtoDF_Move[i] = [];
+	for (var j = 0; j < 6; j++) {
+		for (var k = 0; k < 3; k++) {
+			a.edgeMultiply(CubieCube.moveCube[j]);
+			CoordCube.URtoDF_Move[i][3 * j + k] = a.getURtoDF();
+			// Table values are only valid for phase 2 moves!
+			// For phase 1 moves, casting to short is not possible.
+		}
+		a.edgeMultiply(CubieCube.moveCube[j]);
+	}
+}
+
+
+// **************************helper move tables to compute URtoDF for the beginning of phase2************************
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Move table for the three edges UR,UF and UL in phase1.
+CoordCube.URtoUL_Move = [];
+var a = new CubieCube();
+for (var i = 0; i < CoordCube.N_URtoUL; i++) {
+	a.setURtoUL(i);
+	CoordCube.URtoUL_Move[i] = [];
+	for (var j = 0; j < 6; j++) {
+		for (var k = 0; k < 3; k++) {
+			a.edgeMultiply(CubieCube.moveCube[j]);
+			CoordCube.URtoUL_Move[i][3 * j + k] = a.getURtoUL();
+		}
+		a.edgeMultiply(CubieCube.moveCube[j]);
+	}
+}
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Move table for the three edges UB,DR and DF in phase1.
+CoordCube.UBtoDF_Move = [];
+var a = new CubieCube();
+for (var i = 0; i < CoordCube.N_UBtoDF; i++) {
+	a.setUBtoDF(i);
+	CoordCube.UBtoDF_Move[i] = [];
+	for (var j = 0; j < 6; j++) {
+		for (var k = 0; k < 3; k++) {
+			a.edgeMultiply(CubieCube.moveCube[j]);
+			CoordCube.UBtoDF_Move[i][3 * j + k] = a.getUBtoDF();
+		}
+		a.edgeMultiply(CubieCube.moveCube[j]);
+	}
+}
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Table to merge the coordinates of the UR,UF,UL and UB,DR,DF edges at the beginning of phase2
+CoordCube.MergeURtoULandUBtoDF = [];
+// for i, j <336 the six edges UR,UF,UL,UB,DR,DF are not in the
+// UD-slice and the index is <20160
+for (var uRtoUL = 0; uRtoUL < 336; uRtoUL++) {
+	for (var uBtoDF = 0; uBtoDF < 336; uBtoDF++) {
+		CoordCube.MergeURtoULandUBtoDF[uRtoUL][uBtoDF] = CubieCube.getURtoDF(uRtoUL, uBtoDF);
+	}
+}
+
+// ****************************************Pruning tables for the search*********************************************
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Pruning table for the permutation of the corners and the UD-slice edges in phase2.
+// The pruning table entries give a lower estimation for the number of moves to reach the solved cube.
+CoordCube.Slice_URFtoDLF_Parity_Prun = [];
+for (var i = 0; i < CoordCube.N_SLICE2 * CoordCube.N_URFtoDLF * CoordCube.N_PARITY / 2; i++) {
+	CoordCube.Slice_URFtoDLF_Parity_Prun[i] = -1;
+}
+var depth = 0;
+CoordCube.setPruning(CoordCube.Slice_URFtoDLF_Parity_Prun, 0, 0);
+var done = 1;
+while (done != CoordCube.N_SLICE2 * CoordCube.N_URFtoDLF * CoordCube.N_PARITY) {
+	for (var i = 0; i < CoordCube.N_SLICE2 * CoordCube.N_URFtoDLF * CoordCube.N_PARITY; i++) {
+		var parity = i % 2;
+		var URFtoDLF = (i / 2) / CoordCube.N_SLICE2;
+		var slice = (i / 2) % CoordCube.N_SLICE2;
+		if (CoordCube.getPruning(CoordCube.Slice_URFtoDLF_Parity_Prun, i) == depth) {
+			for (var j = 0; j < 18; j++) {
+				switch (j) {
+				case 3:
+				case 5:
+				case 6:
+				case 8:
+				case 12:
+				case 14:
+				case 15:
+				case 17:
+					continue;
+				default:
+					var newSlice = CoordCube.FRtoBR_Move[slice][j];
+					var newURFtoDLF = CoordCube.URFtoDLF_Move[URFtoDLF][j];
+					var newParity = CoordCube.parityMove[parity][j];
+					if (CoordCube.getPruning(CoordCube.Slice_URFtoDLF_Parity_Prun, (CoordCube.N_SLICE2 * newURFtoDLF + newSlice) * 2 + newParity) == 0x0f) {
+						CoordCube.setPruning(CoordCube.Slice_URFtoDLF_Parity_Prun, (CoordCube.N_SLICE2 * newURFtoDLF + newSlice) * 2 + newParity,(depth + 1));
+						done++;
+					}
+				}
+			}
+		}
+	}
+	depth++;
+}
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Pruning table for the permutation of the edges in phase2.
+// The pruning table entries give a lower estimation for the number of moves to reach the solved cube.
+CoordCube.Slice_URtoDF_Parity_Prun = [];
+for (var i = 0; i < CoordCube.N_SLICE2 * CoordCube.N_URtoDF * CoordCube.N_PARITY / 2; i++) {
+	CoordCube.Slice_URtoDF_Parity_Prun[i] = -1;
+}
+var depth = 0;
+CoordCube.setPruning(CoordCube.Slice_URtoDF_Parity_Prun, 0, 0);
+var done = 1;
+while (done != CoordCube.N_SLICE2 * CoordCube.N_URtoDF * CoordCube.N_PARITY) {
+	for (var i = 0; i < CoordCube.N_SLICE2 * CoordCube.N_URtoDF * CoordCube.N_PARITY; i++) {
+		var parity = i % 2;
+		var URtoDF = (i / 2) / CoordCube.N_SLICE2;
+		var slice = (i / 2) % CoordCube.N_SLICE2;
+		if (CoordCube.getPruning(CoordCube.Slice_URtoDF_Parity_Prun, i) == depth) {
+			for (var j = 0; j < 18; j++) {
+				switch (j) {
+				case 3:
+				case 5:
+				case 6:
+				case 8:
+				case 12:
+				case 14:
+				case 15:
+				case 17:
+					continue;
+				default:
+					var newSlice = CoordCube.FRtoBR_Move[slice][j];
+					var newURtoDF = CoordCube.URtoDF_Move[URtoDF][j];
+					var newParity = CoordCube.parityMove[parity][j];
+					if (CoordCube.getPruning(CoordCube.Slice_URtoDF_Parity_Prun, (CoordCube.N_SLICE2 * newURtoDF + newSlice) * 2 + newParity) == 0x0f) {
+						CoordCube.setPruning(CoordCube.Slice_URtoDF_Parity_Prun, (CoordCube.N_SLICE2 * newURtoDF + newSlice) * 2 + newParity, (depth + 1));
+						done++;
+					}
+				}
+			}
+		}
+	}
+	depth++;
+}
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Pruning table for the twist of the corners and the position (not permutation) of the UD-slice edges in phase1
+// The pruning table entries give a lower estimation for the number of moves to reach the H-subgroup.
+CoordCube.Slice_Twist_Prun = [];
+for (var i = 0; i < CoordCube.N_SLICE1 * CoordCube.N_TWIST / 2 + 1; i++) {
+	CoordCube.Slice_Twist_Prun[i] = -1;
+}
+var depth = 0;
+CoordCube.setPruning(CoordCube.Slice_Twist_Prun, 0, 0);
+var done = 1;
+while (done != CoordCube.N_SLICE1 * CoordCube.N_TWIST) {
+	for (var i = 0; i < CoordCube.N_SLICE1 * CoordCube.N_TWIST; i++) {
+		var twist = i / CoordCube.N_SLICE1, slice = i % CoordCube.N_SLICE1;
+		if (CoordCube.getPruning(CoordCube.Slice_Twist_Prun, i) == depth) {
+			for (var j = 0; j < 18; j++) {
+				var newSlice = CoordCube.FRtoBR_Move[slice * 24][j] / 24;
+				var newTwist = CoordCube.twistMove[twist][j];
+				if (CoordCube.getPruning(CoordCube.Slice_Twist_Prun, CoordCube.N_SLICE1 * newTwist + newSlice) == 0x0f) {
+					CoordCube.setPruning(CoordCube.Slice_Twist_Prun, CoordCube.N_SLICE1 * newTwist + newSlice, (depth + 1));
+					done++;
+				}
+			}
+		}
+	}
+	depth++;
+}
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Pruning table for the flip of the edges and the position (not permutation) of the UD-slice edges in phase1
+// The pruning table entries give a lower estimation for the number of moves to reach the H-subgroup.
+CoordCube.Slice_Flip_Prun = [];
+for (var i = 0; i < CoordCube.N_SLICE1 * CoordCube.N_FLIP / 2; i++) {
+	CoordCube.Slice_Flip_Prun[i] = -1;
+}
+var depth = 0;
+CoordCube.setPruning(CoordCube.Slice_Flip_Prun, 0, 0);
+var done = 1;
+while (done != CoordCube.N_SLICE1 * CoordCube.N_FLIP) {
+	for (var i = 0; i < CoordCube.N_SLICE1 * CoordCube.N_FLIP; i++) {
+		var flip = i / CoordCube.N_SLICE1, slice = i % CoordCube.N_SLICE1;
+		if (CoordCube.getPruning(CoordCube.Slice_Flip_Prun, i) == depth) {
+			for (var j = 0; j < 18; j++) {
+				var newSlice = CoordCube.FRtoBR_Move[slice * 24][j] / 24;
+				var newFlip = CoordCube.flipMove[flip][j];
+				if (CoordCube.getPruning(CoordCube.Slice_Flip_Prun, CoordCube.N_SLICE1 * newFlip + newSlice) == 0x0f) {
+					CoordCube.setPruning(CoordCube.Slice_Flip_Prun, CoordCube.N_SLICE1 * newFlip + newSlice, (depth + 1));
+					done++;
+				}
+			}
+		}
+	}
+	depth++;
+}
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Set pruning value in table. Two values are stored in one byte.
+CoordCube.setPruning = function(table, index, value) {
+	if ((index & 1) == 0) {
+		table[index / 2] &= 0xf0 | value;
+	} else {
+		table[index / 2] &= 0x0f | (value << 4);
+	}
+}
+
+// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Extract pruning value
+CoordCube.getPruning = function(table, index) {
+	if ((index & 1) == 0) {
+		return (table[index / 2] & 0x0f);
+	} else {
+		return ((table[index / 2] & 0xf0) >>> 4);
+	}
+}
+
