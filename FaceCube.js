@@ -1,6 +1,6 @@
 function FaceCube(cubeString) {
-	this.f = typeof subeString !== 'undefined' ? 
-		map.call(cubeString, (c)=>Color[c]) 
+	this.f = typeof cubeString !== 'undefined' ? 
+		cubeString.split('').map((c)=>Color[c])
 		: 
 		[Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, 
 		Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R,

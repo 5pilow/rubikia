@@ -74,16 +74,18 @@ CubieCube.Cnk = function(n, k) {
 // Left rotation of all array elements between l and r
 CubieCube.rotateLeft = function(array, l, r) {
 	var temp = array[l];
-	for (var i = l; i < r; i++)
+	for (var i = l; i < r; i++) {
 		array[i] = array[i + 1];
+	}
 	array[r] = temp;
 }
 
 // Right rotation of all array elements between l and r
 CubieCube.rotateRight = function(array, l, r){
 	var temp = array[r];
-	for (var i = r; i > l; i--)
+	for (var i = r; i > l; i--) {
 		array[i] = array[i - 1];
+	}
 	array[l] = temp;
 }
 	
@@ -285,7 +287,7 @@ CubieCube.prototype.edgeParity = function() {
 // permutation of the UD-slice edges FR,FL,BL and BR
 CubieCube.prototype.getFRtoBR = function() {
 	var a = 0, x = 0;
-	var edge4 = [];
+	var edge4 = new Array(4).fill(0) ;
 	// compute the index a < (12 choose 4) and the permutation array perm.
 	for (var j = Edge.BR; j >= Edge.UR; j--) {
 		if (Edge.FR <= this.edgePermutation[j] && this.edgePermutation[j] <= Edge.BR) {
@@ -306,43 +308,10 @@ CubieCube.prototype.getFRtoBR = function() {
 	return 24 * a + b;
 }
 
-CubieCube.prototype.setFRtoBR = function(idx) {
-	var x;
-	var sliceEdge = [Edge.FR, Edge.FL, Edge.BL, Edge.BR];
-	var otherEdge = [Edge.UR, Edge.UF, Edge.UL, Edge.UB, Edge.DR, Edge.DF, Edge.DL, Edge.DB];
-	var b = idx % 24; // Permutation
-	var a = idx / 24 | 0; // Combination
-	for (var e in Edge) {
-		this.edgePermutation[Edge[e]] = Edge.DB;// Use UR to invalidate all edges
-	}
-
-	for (var j = 1, k; j < 4; j++) {// generate permutation from index b
-		k = b % (j + 1);
-		b =  b / (j + 1) | 0;
-		while (k-- > 0) {
-			CubieCube.rotateRight(sliceEdge, 0, j);
-		}
-	}
-
-	x = 3;// generate combination and set slice edges
-	for (var j = Edge.UR; j <= Edge.BR; j++) {
-		if (a - CubieCube.Cnk(11 - j, x + 1) >= 0) {
-			this.edgePermutation[j] = sliceEdge[3 - x];
-			a -= CubieCube.Cnk(11 - j, x-- + 1);
-		}
-	}
-	x = 0; // set the remaining edges UR..DB
-	for (var j = Edge.UR; j <= Edge.BR; j++) {
-		if (this.edgePermutation[j] == Edge.DB) {
-			this.edgePermutation[j] = otherEdge[x++];
-		}
-	}
-}
-
 // Permutation of all corners except DBL and DRB
 CubieCube.prototype.getURFtoDLF = function() {
 	var a = 0, x = 0;
-	var corner6 = [];
+	var corner6 = new Array(6).fill(0);
 	// compute the index a < (8 choose 6) and the corner permutation.
 	for (var j = Corner.URF; j <= Corner.DRB; j++)
 		if (this.cornerPermutation[j] <= Corner.DLF) {
@@ -363,42 +332,10 @@ CubieCube.prototype.getURFtoDLF = function() {
 	return 720 * a + b;
 }
 
-CubieCube.prototype.setURFtoDLF = function(idx) {
-	var x;
-	var corner6 = [Corner.URF, Corner.UFL, Corner.ULB, Corner.UBR, Corner.DFR, Corner.DLF];
-	var otherCorner = [Corner.DBL, Corner.DRB];
-	var b = idx % 720; // Permutation
-	var a = idx / 720 | 0; // Combination
-	for (var c in Corner) {
-		this.cornerPermutation[Corner[c]] = Corner.DRB;// Use DRB to invalidate all corners
-	}
-	for (var j = 1, k; j < 6; j++) {// generate permutation from index b
-		k = b % (j + 1);
-		b = b / (j + 1) | 0;
-		while (k-- > 0) {
-			CubieCube.rotateRight(corner6, 0, j);
-		}
-	}
-		
-	x = 5;// generate combination and set corners
-	for (var j = Corner.DRB; j >= 0; j--) {
-		if (a - CubieCube.Cnk(j, x + 1) >= 0) {
-			this.cornerPermutation[j] = corner6[x];
-			a -= CubieCube.Cnk(j, x-- + 1);
-		}
-	}
-	x = 0;
-	for (var j = Corner.URF; j <= Corner.DRB; j++) {
-		if (this.cornerPermutation[j] == Corner.DRB) {
-			this.cornerPermutation[j] = otherCorner[x++]; 
-		}
-	}
-}
-
 // Permutation of the six edges UR,UF,UL,UB,DR,DF.
 CubieCube.prototype.getURtoDF = function() {
 	var a = 0, x = 0;
-	var edge6 = [];
+	var edge6 = new Array(6).fill(0);
 	// compute the index a < (12 choose 6) and the edge permutation.
 	for (var j = Edge.UR; j <= Edge.BR; j++)
 		if (this.edgePermutation[j] <= Edge.DF) {
@@ -419,40 +356,10 @@ CubieCube.prototype.getURtoDF = function() {
 	return 720 * a + b;
 }
 
-CubieCube.prototype.setURtoDF = function(idx) {
-	var x;
-	var edge6 = [Edge.UR, Edge.UF, Edge.UL, Edge.UB, Edge.DR, Edge.DF];
-	var otherEdge = [Edge.DL, Edge.DB, Edge.FR, Edge.FL, Edge.BL, Edge.BR];
-	var b = idx % 720; // Permutation
-	var a = idx / 720 | 0; // Combination
-	for (var e in Edge) {
-		this.edgePermutation[Edge[e]] = Edge.BR;// Use BR to invalidate all edges
-	}
-	for (var j = 1, k; j < 6; j++) {// generate permutation from index b
-		k = b % (j + 1);
-		b = b / (j + 1) | 0;
-		while (k-- > 0) {
-			CubieCube.rotateRight(edge6, 0, j);
-		}
-	}
-	x = 5;// generate combination and set edges
-	for (var j = Edge.BR; j >= 0; j--)
-		if (a - CubieCube.Cnk(j, x + 1) >= 0) {
-			this.edgePermutation[j] = edge6[x];
-			a -= CubieCube.Cnk(j, x-- + 1);
-		}
-	x = 0; // set the remaining edges DL..BR
-	for (var j = Edge.UR; j <= Edge.BR; j++) {
-		if (this.edgePermutation[j] == Edge.BR) {
-			this.edgePermutation[j] = otherEdge[x++]; 
-		}
-	}
-}
-
 // Permutation of the three edges UR,UF,UL
 CubieCube.prototype.getURtoUL = function() {
 	var a = 0, x = 0;
-	var edge3 = [];
+	var edge3 = new Array(3).fill(0);
 	// compute the index a < (12 choose 3) and the edge permutation.
 	for (var j = Edge.UR; j <= Edge.BR; j++)
 		if (this.edgePermutation[j] <= Edge.UL) {
@@ -465,7 +372,7 @@ CubieCube.prototype.getURtoUL = function() {
 	// permutation in edge3
 		var k = 0;
 		while (edge3[j]	!= j) {
-			this.rotateLeft(edge3, 0, j);
+			CubieCube.rotateLeft(edge3, 0, j);
 			k++;
 		}
 		b = (j + 1) * b + k;
@@ -500,7 +407,7 @@ CubieCube.prototype.setURtoUL = function(idx) {
 // Permutation of the three edges UB,DR,DF
 CubieCube.prototype.getUBtoDF = function() {
 	var a = 0, x = 0;
-	var edge3 = [];
+	var edge3 = new Array(3).fill(0);
 	// compute the index a < (12 choose 3) and the edge permutation.
 	for (var j = Edge.UR; j <= Edge.BR; j++) {
 		if (Edge.UB <= this.edgePermutation[j] && this.edgePermutation[j] <= Edge.DF) {
@@ -594,23 +501,6 @@ CubieCube.prototype.setURFtoDLB = function(idx) {
 	for (var j = 7; j >= 0; j--) {
 		this.cornerPermutation[j] = perm[x--];
 	}
-}
-
-CubieCube.prototype.getURtoBR = function() {
-	var perm = [];
-	var b = 0;
-	for (var i = 0; i < 12; i++) {
-		perm[i] = this.edgePermutation[i];
-	}
-	for (var j = 11; j > 0; j--) {// compute the index b < 12! for the permutation in perm
-		var k = 0;
-		while (perm[j] != j) {
-			CubieCube.rotateLeft(perm, 0, j);
-			k++;
-		}
-		b = (j + 1) * b + k;
-	}
-	return b;
 }
 
 CubieCube.prototype.setURtoBR = function(idx) {

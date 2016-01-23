@@ -1,20 +1,20 @@
 var Search = {};
-Search.ax = []; // Axe du mouvement
-Search.po = []; // Angle de rotation
+Search.ax = new Array(31).fill(0); // Axe du mouvement
+Search.po = new Array(31).fill(0); // Angle de rotation
 
-Search.flip = []; // Coordonnées pahse 1
-Search.twist = [];
-Search.slice = [];
+Search.flip = new Array(31).fill(0); // Coordonnées pahse 1
+Search.twist = new Array(31).fill(0);
+Search.slice = new Array(31).fill(0);
 
-Search.parity = []; // Coordonnées phase 2
-Search.URFtoDLF = [];
-Search.FRtoBR = [];
-Search.URtoUL = [];
-Search.UBtoDF = [];
-Search.URtoDF = [];
+Search.parity = new Array(31).fill(0); // Coordonnées phase 2
+Search.URFtoDLF = new Array(31).fill(0);
+Search.FRtoBR = new Array(31).fill(0);
+Search.URtoUL = new Array(31).fill(0);
+Search.UBtoDF = new Array(31).fill(0);
+Search.URtoDF = new Array(31).fill(0);
 
-Search.minDistPhase1 = []; // Estimations de la distance au but pour IDA*
-Search.minDistPhase2 = [];
+Search.minDistPhase1 = new Array(31).fill(0); // Estimations de la distance au but pour IDA*
+Search.minDistPhase2 = new Array(31).fill(0);
 	
 // Retourne la solution sous forme d'une chaine de caractère
 Search.solutionToString = function(length) {
@@ -90,8 +90,9 @@ Search.solutionToString = function(length, depthPhase1) {
 			break;
 
 		}
-		if (i == depthPhase1 - 1)
+		if (i == depthPhase1 - 1) {
 			s += ". ";
+		}
 	}
 	return s;
 };
@@ -128,11 +129,12 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 	var s;
 
 	// +++++++++++++++++++++check for wrong input +++++++++++++++++++++++++++++
-	var count = [];
+	var count = {U:0, R:0, F:0, D:0, L:0, B:0};
 	for (var i = 0; i < 54; i++) {
 		count[Color[facelets.substring(i, i + 1)]]++;
 	}
-	for (var i = 0; i < 6; i++) {
+	
+	for (var i in {U:0, R:0, F:0, D:0, L:0, B:0}) {
 		if (count[i] != 9) {
 			return "Error 1";
 		}
@@ -150,7 +152,7 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 	Search.flip[0] = coordCube.flip;
 	Search.twist[0] = coordCube.twist;
 	Search.parity[0] = coordCube.parity;
-	Search.slice[0] = coordCube.FRtoBR / 24;
+	Search.slice[0] = coordCube.FRtoBR / 24 | 0;
 	Search.URFtoDLF[0] = coordCube.URFtoDLF;
 	Search.FRtoBR[0] = coordCube.FRtoBR;
 	Search.URtoUL[0] = coordCube.URtoUL;
@@ -162,7 +164,7 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 	var depthPhase1 = 1;
 
 	var tStart = new Date().getTime();
-
+	
 	// +++++++++++++++++++ Main loop ++++++++++++++++++++++++++++++++++++++++++
 	do {
 		do {
@@ -178,7 +180,7 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 				do {// increment axis
 					if (++Search.ax[n] > 5) {
 
-						if (new Date().getTime() - tStart > timeOut << 10) {
+						if (new Date().getTime() - tStart > timeOut) {
 							return "Error 8";
 						}
 						if (n == 0) {
@@ -202,8 +204,9 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 						busy = false;
 					}
 				} while (n != 0 && (Search.ax[n - 1] == Search.ax[n] || Search.ax[n - 1] - 3 == Search.ax[n]));
-			} else
+			} else {
 				busy = false;
+			}
 		} while (busy);
 
 		// +++++++++++++ compute new coordinates and new minDistPhase1 ++++++++++
@@ -211,7 +214,7 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 		mv = 3 * Search.ax[n] + Search.po[n] - 1;
 		Search.flip[n + 1] = CoordCube.flipMove[Search.flip[n]][mv];
 		Search.twist[n + 1] = CoordCube.twistMove[Search.twist[n]][mv];
-		Search.slice[n + 1] = CoordCube.FRtoBR_Move[Search.slice[n] * 24][mv] / 24;
+		Search.slice[n + 1] = CoordCube.FRtoBR_Move[Search.slice[n] * 24][mv] / 24 | 0;
 		Search.minDistPhase1[n + 1] = Math.max(CoordCube.getPruning(CoordCube.Slice_Flip_Prun, CoordCube.N_SLICE1 * Search.flip[n + 1]
 				+ Search.slice[n + 1]), CoordCube.getPruning(CoordCube.Slice_Twist_Prun, CoordCube.N_SLICE1 * Search.twist[n + 1] + Search.slice[n + 1]));
 		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
