@@ -317,6 +317,9 @@ VirtualRubik.prototype.reshape = function() {
 }
 /** Draws an individual object of the scene. */
 VirtualRubik.prototype.drawObject = function(obj, mvMatrix, color, phong, forceColorUpdate) {
+
+forceColorUpdate = true
+
   if (obj.proxy) {
     if (obj.proxy.loaded) {
       obj.colorObject=obj.proxy.colorObject;
