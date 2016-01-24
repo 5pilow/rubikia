@@ -1,0 +1,67 @@
+#canvas {
+	display: inline-block;
+}
+
+#faces {
+	width: 650px;
+	display: inline-block;
+	margin-left: 100px;
+}
+
+#faces .face {
+	width: 150px;
+	height: 150px;
+	display: inline-block;
+	margin: 5px;
+}
+
+#faces .face .tile {
+	width: 48px;
+	height: 48px;
+	background: #eee;
+	display: inline-block;
+	border: 1px solid #ccc;
+	vertical-align: top;
+	cursor: pointer;
+}
+
+#faces .face.top {
+	margin-left: 165px;
+	margin-right: 300px;
+}
+
+#faces .face.bottom {
+	margin-left: 165px;
+}
+
+#colors {
+	margin-top: 50px;
+}
+
+#colors .color {
+	display: inline-block;
+	width: 50px;
+	height: 50px;
+	border: 1px solid #ccc;
+	cursor: pointer;
+	margin-right: 10px;
+}
+
+#colors .color.white {
+	background: white;
+}
+#colors .color.red {
+	background: #DA1A00;
+}
+#colors .color.blue {
+	background: blue;
+}
+#colors .color.green {
+	background: green;
+}
+#colors .color.yellow {
+	background: #FFD200;
+}
+#colors .color.orange {
+	background: #FF6500;
+}

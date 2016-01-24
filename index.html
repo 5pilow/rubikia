@@ -3,14 +3,41 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>Virtual Rubik's Cube with WebGL</title>
+		<script src="jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
 		<script type="text/javascript" src="lib3dcube/virtualrubik.js"></script>
 		<script type="text/javascript">includeVirtualRubik("lib3dcube");</script>
 		<script type="text/javascript" src="index.js"></script>
+		<link href='style.css' rel='stylesheet' type='text/css'>
 	</head>
 
 	<body onLoad="init()">
 
-		<canvas id="canvas1" class="virtualrubik" width="800" height="800"></canvas>
+		<canvas id="canvas" class="virtualrubik" width="500" height="500"></canvas>
+
+		<div id='faces'>
+			<div class='face top'>
+				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
+			</div><div class='face left'>
+				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
+			</div><div class='face front'>
+				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
+			</div><div class='face right'>
+				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
+			</div><div class='face back'>
+				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
+			</div><div class='face bottom'>
+				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
+			</div>
+
+			<div id='colors'>
+				<span class='color red'></span><span class='color yellow'></span><span class='color blue'></span><span class='color orange'></span><span class='color white'></span><span class='color green'></span>
+			</div>
+		</div>
+
+		<br>
+		<br>
+		<input id='script' type='text' value="M2' U M2' U2 M2' U M2'">
+		<button id='move'>Execute</button>
 
 	</body>
 </html> 

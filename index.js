@@ -1,5 +1,19 @@
 function init() {
 
+	var FACES = {0: 1, 1: 3, 2: 2, 3: 0, 4: 5, 5: 4}
+	var COLORS = [
+		[140,  0, 15,255], // right : red
+		[255,210,  0,255], // up : yellow 
+		[  0, 51,115,255], // front : blue
+		[255, 70,  0,255], // left : orange
+		[248,248,248,255], // down : white 
+		[  0,115, 47,255]  // back : green
+	  ];
+
+	var current_color = 0
+
+	var cube = null
+
 	/*
 	 * Couleurs initiales du cube
 	 */
@@ -20,15 +34,41 @@ function init() {
 	 */
 	var ready = function(cube) {
 
-		var seq = parseScript("M2' U M2' U2 M2' U M2'")
+		$('#faces .tile').click(function() {
 
-		performSequence(cube, seq)
+			var tile = $(this).index()
+			var face = $(this).parent().index()
+
+			$(this).css('background', $($('#colors .color')[current_color]).css('background'))
+
+			cube.cube3d.attributes.stickersFillColor[FACES[face] * 9 + tile] = COLORS[current_color]
+
+			cube.repaint()
+		})
+
+		$('#move').click(function() {
+
+			var script = $('#script').val()
+			var seq = parseScript(script)
+			performSequence(cube, seq)
+		})
 	}
 	
 	/*
 	 * Initialisation du cube
 	 */
-	attachVirtualRubik(document.getElementById('canvas1'), ready, colors, xRot, yRot)
+	attachVirtualRubik(document.getElementById('canvas'), ready, colors, xRot, yRot)
+
+	$('#faces .face').each(function() {
+		var color = $($('#colors .color')[FACES[$(this).index()]]).css('background')
+		$(this).find('.tile').css('background', color)
+	})
+
+	$('#colors .color').click(function() {
+		current_color = $(this).index()
+	})
+
+
 }
 
 function performReverseSequence(cube, sequence) {
