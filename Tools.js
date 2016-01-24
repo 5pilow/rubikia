@@ -1,26 +1,16 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                 Quelques outils pour les cubes
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 var Tools = {};
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Check if the cube string s represents a solvable cube.
-// 0: Cube is solvable
-// -1: There is not exactly one facelet of each colour
-// -2: Not all 12 edges exist exactly once
-// -3: Flip error: One edge has to be flipped
-// -4: Not all corners exist exactly once
-// -5: Twist error: One corner has to be twisted
-// -6: Parity error: Two corners or two edges have to be exchanged
-// 
-/**
- * Check if the cube definition string s represents a solvable cube.
- * 
- * @param s is the cube definition string , see {@link Facelet}
- * @return 0: Cube is solvable<br>
- *         -1: There is not exactly one facelet of each colour<br>
- *         -2: Not all 12 edges exist exactly once<br>
- *         -3: Flip error: One edge has to be flipped<br>
- *         -4: Not all 8 corners exist exactly once<br>
- *         -5: Twist error: One corner has to be twisted<br>
- *         -6: Parity error: Two corners or two edges have to be exchanged
- */
+
+/* Vérifie que le cube passé en paramètre est possible à résoudre.                 *
+ *  0: Le cube a une solution                                                      *
+ * -1: Il n'y a pas 9 facettes de chaque couleur                                   *
+ * -2: Il n'y a pas 12 arêtes uniques                                              *
+ * -3: Une des arêtes a été inversée                                               *
+ * -4: Il n'y a pas 8 coins uniques                                                *
+ * -5: Un coin a été tourné                                                        *
+ * -6: Erreur de parité : 2 coins ou 2 arêtes ont été echangés                     */
 Tools.verify = function(s) {
 	var count = [];
 	for (var i = 0; i < 54; i++) {
@@ -36,10 +26,9 @@ Tools.verify = function(s) {
 	return new FaceCube(s).toCubieCube().verify();
 }
 
-/**
- * Generates a random cube.
- * @return A random cube in the string representation. Each cube of the cube space has the same probability.
- */
+
+/* Génère un cube aléatoirement. Retourne le cube sous forme d'une chaîne de       *
+ * caractère                                                                       */
 Tools.randomCube = function() {
 	var cubieCube = new CubieCube();
 	cubieCube.setFlip(Math.floor(Math.random() * CoordCube.N_FLIP));

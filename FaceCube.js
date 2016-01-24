@@ -1,7 +1,33 @@
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
+    FaceCube représente un cube par toutes ses facettes :
+                     |U1 U2 U3|
+                     |U4 U5 U6|
+            		 |U7 U8 U9|
+            |L1 L2 L3|F1 F2 F3|R1 R2 R3|B1 B2 B3|
+            |L4 L5 L6|F4 F5 F6|R4 R5 R6|B4 B5 B6|
+            |L7 L8 L9|F7 F8 F9|R7 R8 R9|B7 B8 B9|
+                     |D1 D2 D3|
+                     |D4 D5 D6|
+            		 |D7 D8 D9|
+    		 
+    C'est un tableau de la forme :
+            [U1, U2, U3, U4, U5, U6, U7, U8, U9,
+             R1, R2, R3, R4, R5, R6, R7, R8, R9,
+             F1, F2, F3, F4, F5, F6, F7, F8, F9,
+             D1, D2, D3, D4, D5, D6, D7, D8, D9,
+             L1, L2, L3, L4, L5, L6, L7, L8, L9,
+             B1, B2, B3, B4, B5, B6, B7, B8, B9]
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
+
+
+
+/* Constructeur de FaceCube.                                                       *
+ * Crée le FaceCube représenté par la chaine de caractère passée en paramètre,     *
+ * ou un cube non mélangé par défault.                                             */
 function FaceCube(cubeString) {
 	this.f = typeof cubeString !== 'undefined' ? 
 		cubeString.split('').map((c)=>Color[c])
-		: 
+		: // Par defaut
 		[Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, 
 		Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R,
 		Color.F, Color.F, Color.F, Color.F, Color.F, Color.F, Color.F, Color.F, Color.F, 
@@ -10,11 +36,11 @@ function FaceCube(cubeString) {
 		Color.B, Color.B, Color.B, Color.B, Color.B, Color.B, Color.B, Color.B, Color.B];
 }
 
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Map the corner positions to facelet positions. cornerFacelet[URF.ordinal()][0] e.g. gives the position of the
-// facelet in the URF corner position, which defines the orientation.<br>
-// cornerFacelet[URF.ordinal()][1] and cornerFacelet[URF.ordinal()][2] give the position of the other two facelets
-// of the URF corner (clockwise).
+/* Fait correspondre la position des coins par rapport aux positions des facettes. *
+ * Par exemple, cornerFacelet[URF][0] donne la position de la facette à la         *
+ * position du coin URF, qui correspond à l'orientation.                           *
+ * cornerFacelet[URF][1] et cornerFacelet[URF][2] donne la position des 2 autres   *
+ * facettes du coin URF (dans le sens des aiguilles d'un montre)                   */
 FaceCube.cornerFacelet = [ 
 	[ Facelet.U9, Facelet.R1, Facelet.F3 ], 
 	[ Facelet.U7, Facelet.F1, Facelet.L3 ], 
@@ -26,10 +52,11 @@ FaceCube.cornerFacelet = [
 	[ Facelet.D9, Facelet.R9, Facelet.B7 ] 
 ];
 
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Map the edge positions to facelet positions. edgeFacelet[UR.ordinal()][0] e.g. gives the position of the facelet in
-// the UR edge position, which defines the orientation.<br>
-// edgeFacelet[UR.ordinal()][1] gives the position of the other facelet
+
+/* Fait correspondre la position des arêtes par rapport aux positions des facettes.*
+ * Par exemple, edgeFacelet[UR][0] donne la position de la facette à la position   *
+ * de l'arête UR, qui correspond à l'orientation.                                  *
+ * edgeFacelet[URF][1] donne la position de l'autre                                */
 FaceCube.edgeFacelet = [ 
 	[ Facelet.U6, Facelet.R2 ], 
 	[ Facelet.U8, Facelet.F2 ],
@@ -45,8 +72,8 @@ FaceCube.edgeFacelet = [
 	[ Facelet.B4, Facelet.R6 ] 
 ];
 
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Map the corner positions to facelet colors.
+
+/* Fait correspondre la position des coins par rapport aux couleurs des facettes.  */
 FaceCube.cornerColor = [ 
 	[ Color.U, Color.R, Color.F ], 
 	[ Color.U, Color.F, Color.L ],
@@ -58,8 +85,8 @@ FaceCube.cornerColor = [
 	[ Color.D, Color.R, Color.B ] 
 ];
 
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Map the edge positions to facelet colors.
+
+/* Fait correspondre la position des arêtes par rapport aux couleurs des facettes. */
 FaceCube.edgeColor = [ 
 	[ Color.U, Color.R ], 
 	[ Color.U, Color.F ],
@@ -75,27 +102,27 @@ FaceCube.edgeColor = [
 	[ Color.B, Color.R ] 
 ];
 
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Gives string representation of a facelet cube
+/* Donne la représentation du cube en chaîne de caractères.                        */
 FaceCube.prototype.to_String = function() {
 	return this.f.join("");
 };
 
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Gives CubieCube representation of a faceletcube
+
+/* Donne la représentation en CubieCube du cube                                    */
 FaceCube.prototype.toCubieCube = function() {
 	var ori;
 	var cubieCube = new CubieCube();
 	for (var i = 0; i < 8; i++) {
-		cubieCube.cornerPermutation[i] = Corner.URF;// invalidate corners
+		cubieCube.cornerPermutation[i] = Corner.URF;// Reset les coins du CubieCube
 	}
 	for (var i = 0; i < 12; i++) {
-		cubieCube.edgePermutation[i] = Edge.UR;// and edges
+		cubieCube.edgePermutation[i] = Edge.UR;// et les angles également
 	}
 	var col1, col2;
+	// On récupère les coins
 	for (var i in Corner) {
 		i = Corner[i];
-		// get the colors of the cubie at corner i, starting with U/D
+		// On récupère les couleurs du Cubie au coin i, en commençant par UD
 		for (ori = 0; ori < 3; ori++) {
 			if (this.f[FaceCube.cornerFacelet[i][ori]] == Color.U || this.f[FaceCube.cornerFacelet[i][ori]] == Color.D) {
 				break;
@@ -107,25 +134,26 @@ FaceCube.prototype.toCubieCube = function() {
 		for (var j in Corner) {
 			j = Corner[j];
 			if (col1 == FaceCube.cornerColor[j][1] && col2 == FaceCube.cornerColor[j][2]) {
-				// in cornerposition i we have cornercubie j
+				// A la position du coin i, nous avons le coin j
 				cubieCube.cornerPermutation[i] = j;
 				cubieCube.cornerOrientation[i] = ori % 3;
 				break;
 			}
 		}
 	}
+	// On récupère les arêtes
 	for (var i in Edge) {
 		i = Edge[i];
 		for (var j in Edge) {
 			j = Edge[j];
 			if (this.f[FaceCube.edgeFacelet[i][0]] == FaceCube.edgeColor[j][0] 
-				&& this.f[FaceCube.edgeFacelet[i][1]] == FaceCube.edgeColor[j][1]) {
+			&& this.f[FaceCube.edgeFacelet[i][1]] == FaceCube.edgeColor[j][1]) {
 				cubieCube.edgePermutation[i] = j;
 				cubieCube.edgeOrientation[i] = 0;
 				break;
 			}
 			if (this.f[FaceCube.edgeFacelet[i][0]] == FaceCube.edgeColor[j][1]
-					&& this.f[FaceCube.edgeFacelet[i][1]] == FaceCube.edgeColor[j][0]) {
+			&& this.f[FaceCube.edgeFacelet[i][1]] == FaceCube.edgeColor[j][0]) {
 				cubieCube.edgePermutation[i] = j;
 				cubieCube.edgeOrientation[i] = 1;
 				break;

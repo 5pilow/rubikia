@@ -1,8 +1,14 @@
+/*
+Quelques explications :
+- Menu principal
+https://web.archive.org/web/20150909231317/http://www.kociemba.org/cube.htm
+*/
+
 var Search = {};
 Search.ax = new Array(31).fill(0); // Axe du mouvement
 Search.po = new Array(31).fill(0); // Angle de rotation
 
-Search.flip = new Array(31).fill(0); // Coordonnées pahse 1
+Search.flip = new Array(31).fill(0); // Coordonnées phase 1
 Search.twist = new Array(31).fill(0);
 Search.slice = new Array(31).fill(0);
 
