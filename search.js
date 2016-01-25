@@ -1,8 +1,6 @@
-/*
-Quelques explications :
-- Menu principal
-https://web.archive.org/web/20150909231317/http://www.kociemba.org/cube.htm
-*/
+/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+                 2-phase Algorithm
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 var Search = {};
 Search.ax = new Array(31).fill(0); // Axe du mouvement
@@ -21,8 +19,8 @@ Search.URtoDF = new Array(31).fill(0);
 
 Search.minDistPhase1 = new Array(31).fill(0); // Estimations de la distance au but pour IDA*
 Search.minDistPhase2 = new Array(31).fill(0);
-	
-// Retourne la solution sous forme d'une chaine de caractère
+
+/* Retourne la solution sous forme d'une chaine de caractères.                     */
 Search.solutionToString = function(length) {
 	var s = "";
 	for (var i = 0; i < length; i++) {
@@ -60,7 +58,9 @@ Search.solutionToString = function(length) {
 	}
 	return s;
 }
-	
+
+/* Retourne la solution sous forme d'une chaine de caractères avec un séparateur   *
+ * entre la phase 1 et la phase 2.                                                 */
 Search.solutionToString = function(length, depthPhase1) {
 	var s = "";
 	for (var i = 0; i < length; i++) {
@@ -102,39 +102,32 @@ Search.solutionToString = function(length, depthPhase1) {
 	}
 	return s;
 };
-	
-/**
- * Computes the solver string for a given cube.
- * 
- * @param facelets
- *          is the cube definition string, see {@link Facelet} for the format.
- * 
- * @param maxDepth
- *          defines the maximal allowed maneuver length. For random cubes, a maxDepth of 21 usually will return a
- *          solution in less than 0.5 seconds. With a maxDepth of 20 it takes a few seconds on average to find a
- *          solution, but it may take much longer for specific cubes.
- * 
- *@param timeOut
- *          defines the maximum computing time of the method in seconds. If it does not return with a solution, it returns with
- *          an error code.
- * 
- * @param useSeparator
- *          determines if a " . " separates the phase1 and phase2 parts of the solver string like in F' R B R L2 F .
- *          U2 U D for example.<br>
- * @return The solution string or an error code:<br>
- *         Error 1: There is not exactly one facelet of each colour<br>
- *         Error 2: Not all 12 edges exist exactly once<br>
- *         Error 3: Flip error: One edge has to be flipped<br>
- *         Error 4: Not all corners exist exactly once<br>
- *         Error 5: Twist error: One corner has to be twisted<br>
- *         Error 6: Parity error: Two corners or two edges have to be exchanged<br>
- *         Error 7: No solution exists for the given maxDepth<br>
- *         Error 8: Timeout, no solution within given time
- */
+
+/* Calcule et retourne les mouvements pour résoudre le cube sous forme d'une       *
+ * chaîne de caractères.                                                           *
+ *                                                                                 *
+ * Paramètres :                                                                    *
+ * - facelets : cube représenté sous forme d'une chaîne de caractères.             *
+ * - maxDepth : profondeur maximale de recherche. Avec 21 une solution est trouvée *
+ * en moins d'une seconde, avec 20 en quelques secondes.                           *
+ * - timeOut : temps maximal de calcul pour trouver une solution en ms. Si une     *
+ * solution n'est pas trouvée dans le temps imparti, retourne un code erreur.      *
+ * - useSeparateur : si vrai, un point sera mis dans le résultat entre les étapes  *
+ * de la phase 1 et de la phase 2.                                                 *
+ *                                                                                 *
+ * Codes erreur :                                                                  *
+ * Error 1: Il n'y a pas 9 facettes de chaque couleur                              *
+ * Error 2: Il n'y a pas 12 arêtes uniques                                         *
+ * Error 3: Une des arêtes a été inversée                                          *
+ * Error 4: Il n'y a pas 8 coins uniques                                           *
+ * Error 5: Un coin a été tourné                                                   *
+ * Error 6: Erreur de parité : 2 coins ou 2 arêtes ont été echangés                *
+ * Error 7: Aucune solution n'existe pour la maxDepth donnée                       *
+ * Error 8: Timeout, aucune solution n'a été trouvée dans le temps imparti         */
 Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 	var s;
 
-	// +++++++++++++++++++++check for wrong input +++++++++++++++++++++++++++++
+	// Vérifie que le cube passé en paramètre est correct
 	var count = {U:0, R:0, F:0, D:0, L:0, B:0};
 	for (var i = 0; i < 54; i++) {
 		count[Color[facelets.substring(i, i + 1)]]++;
@@ -150,7 +143,7 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 		return "Error " + Math.abs(s);
 	}
 
-	// +++++++++++++++++++++++ initialization +++++++++++++++++++++++++++++++++
+	// Initialisation
 	var coordCube = new CoordCube(cubieCube);
 
 	Search.po[0] = 0;
@@ -164,26 +157,26 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 	Search.URtoUL[0] = coordCube.URtoUL;
 	Search.UBtoDF[0] = coordCube.UBtoDF;
 
-	Search.minDistPhase1[1] = 1;// else failure for depth=1, n=0
+	Search.minDistPhase1[1] = 1; // Sinon échec pour depth=1 et n=0
 	var mv = 0, n = 0;
 	var busy = false;
 	var depthPhase1 = 1;
 
 	var tStart = new Date().getTime();
 	
-	// +++++++++++++++++++ Main loop ++++++++++++++++++++++++++++++++++++++++++
+	// Boucle principale
 	do {
 		do {
 			if ((depthPhase1 - n > Search.minDistPhase1[n + 1]) && !busy) {
 
-				if (Search.ax[n] == 0 || Search.ax[n] == 3) {// Initialize next move
+				if (Search.ax[n] == 0 || Search.ax[n] == 3) {// Initialise le prochain mouvement
 					Search.ax[++n] = 1;
 				} else {
 					Search.ax[++n] = 0;
 				}
 				Search.po[n] = 1;
 			} else if (++Search.po[n] > 3) {
-				do {// increment axis
+				do { // Incrémente l'axe
 					if (++Search.ax[n] > 5) {
 
 						if (new Date().getTime() - tStart > timeOut) {
@@ -215,18 +208,17 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 			}
 		} while (busy);
 
-		// +++++++++++++ compute new coordinates and new minDistPhase1 ++++++++++
-		// if minDistPhase1 =0, the H subgroup is reached
+		// Calcule les nouvelles coordonées et la nouvelle distance min  pour la phase 1 (minDistPhase1)
+		// Si minDistPhase1=0, alors le sous groupe H est atteind
 		mv = 3 * Search.ax[n] + Search.po[n] - 1;
 		Search.flip[n + 1] = CoordCube.flipMove[Search.flip[n]][mv];
 		Search.twist[n + 1] = CoordCube.twistMove[Search.twist[n]][mv];
 		Search.slice[n + 1] = CoordCube.FRtoBR_Move[Search.slice[n] * 24][mv] / 24 | 0;
 		Search.minDistPhase1[n + 1] = Math.max(CoordCube.getPruning(CoordCube.Slice_Flip_Prun, CoordCube.N_SLICE1 * Search.flip[n + 1]
 				+ Search.slice[n + 1]), CoordCube.getPruning(CoordCube.Slice_Twist_Prun, CoordCube.N_SLICE1 * Search.twist[n + 1] + Search.slice[n + 1]));
-		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-
+		
 		if (Search.minDistPhase1[n + 1] == 0 && n >= depthPhase1 - 5) {
-			Search.minDistPhase1[n + 1] = 10;// instead of 10 any value >5 is possible
+			Search.minDistPhase1[n + 1] = 10; // A la place de 10, n'importe quelle valeur >5 est possible
 			if (n == depthPhase1 - 1 && (s = Search.totalDepth(depthPhase1, maxDepth)) >= 0) {
 				if (s == depthPhase1 || (Search.ax[depthPhase1 - 1] != Search.ax[depthPhase1] && Search.ax[depthPhase1 - 1] != Search.ax[depthPhase1] + 3)) {
 					return useSeparator ? Search.solutionToString(s, depthPhase1) : Search.solutionToString(s);
@@ -236,13 +228,13 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 		}
 	} while (true);
 }
-	
-// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Apply phase2 of algorithm and return the combined phase1 and phase2 depth. In phase2, only the moves
-// U,D,R2,F2,L2 and B2 are allowed.
+
+/* Applique la phase 2 de l'algorithm et retourne la somme des profondeurs des     *
+ * phases 1 et 2.                                                                  *
+ * Dans la phase 2, seulement les mouvements U, D, R2, F2, L2 et B2 sont autorisés.*/
 Search.totalDepth = function(depthPhase1, maxDepth) {
 	var mv = 0, d1 = 0, d2 = 0;
-	var maxDepthPhase2 = Math.min(10, maxDepth - depthPhase1);// Allow only max 10 moves in phase2
+	var maxDepthPhase2 = Math.min(10, maxDepth - depthPhase1); // Autorise seulement 10 mouvement maximum en phase 2
 	for (var i = 0; i < depthPhase1; i++) {
 		mv = 3 * Search.ax[i] + Search.po[i] - 1;
 		Search.URFtoDLF[i + 1] = CoordCube.URFtoDLF_Move[Search.URFtoDLF[i]][mv];
@@ -265,23 +257,22 @@ Search.totalDepth = function(depthPhase1, maxDepth) {
 			(CoordCube.N_SLICE2 * Search.URtoDF[depthPhase1] + Search.FRtoBR[depthPhase1]) * 2 + Search.parity[depthPhase1])) > maxDepthPhase2) {
 		return -1;
 	}
-	if ((Search.minDistPhase2[depthPhase1] = Math.max(d1, d2)) == 0) {// already solved
+	if ((Search.minDistPhase2[depthPhase1] = Math.max(d1, d2)) == 0) { // Déjà résolu
 		return depthPhase1;
 	}
-	// now set up search
 
 	var depthPhase2 = 1;
 	var n = depthPhase1;
 	var busy = false;
 	Search.po[depthPhase1] = 0;
 	Search.ax[depthPhase1] = 0;
-	Search.minDistPhase2[n + 1] = 1;// else failure for depthPhase2=1, n=0
-	// +++++++++++++++++++ end initialization +++++++++++++++++++++++++++++++++
+	Search.minDistPhase2[n + 1] = 1; // Sinon échec pour depthPhase2=1 et n=0
+	// Fin de l'initialisation
 	do {
 		do {
 			if ((depthPhase1 + depthPhase2 - n > Search.minDistPhase2[n + 1]) && !busy) {
 
-				if (Search.ax[n] == 0 || Search.ax[n] == 3) {// Initialize next move
+				if (Search.ax[n] == 0 || Search.ax[n] == 3) { // Initialise le prochain mouvement
 					Search.ax[++n] = 1;
 					Search.po[n] = 2;
 				} else {
@@ -289,7 +280,7 @@ Search.totalDepth = function(depthPhase1, maxDepth) {
 					Search.po[n] = 1;
 				}
 			} else if ((Search.ax[n] == 0 || Search.ax[n] == 3) ? (++Search.po[n] > 3) : ((Search.po[n] = Search.po[n] + 2) > 3)) {
-				do {// increment axis
+				do { // Incrémente l'axe
 					if (++Search.ax[n] > 5) {
 						if (n == depthPhase1) {
 							if (depthPhase2 >= maxDepthPhase2) {
@@ -320,7 +311,7 @@ Search.totalDepth = function(depthPhase1, maxDepth) {
 				busy = false;
 			}
 		} while (busy);
-		// +++++++++++++ compute new coordinates and new minDist ++++++++++
+		// Calcule les nouvelles coordonnées et la nouvelle minDist
 		mv = 3 * Search.ax[n] + Search.po[n] - 1;
 
 		Search.URFtoDLF[n + 1] = CoordCube.URFtoDLF_Move[Search.URFtoDLF[n]][mv];
@@ -329,11 +320,9 @@ Search.totalDepth = function(depthPhase1, maxDepth) {
 		Search.URtoDF[n + 1] = CoordCube.URtoDF_Move[Search.URtoDF[n]][mv];
 
 		Search.minDistPhase2[n + 1] = Math.max(CoordCube.getPruning(CoordCube.Slice_URtoDF_Parity_Prun, (CoordCube.N_SLICE2
-				* Search.URtoDF[n + 1] + Search.FRtoBR[n + 1])
-				* 2 + Search.parity[n + 1]), CoordCube.getPruning(CoordCube.Slice_URFtoDLF_Parity_Prun, (CoordCube.N_SLICE2
-				* Search.URFtoDLF[n + 1] + Search.FRtoBR[n + 1])
-				* 2 + Search.parity[n + 1]));
-		// ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+				* Search.URtoDF[n + 1] + Search.FRtoBR[n + 1]) * 2 + Search.parity[n + 1]),
+				CoordCube.getPruning(CoordCube.Slice_URFtoDLF_Parity_Prun, (CoordCube.N_SLICE2
+				* Search.URFtoDLF[n + 1] + Search.FRtoBR[n + 1]) * 2 + Search.parity[n + 1]));
 
 	} while (Search.minDistPhase2[n + 1] != 0);
 	return depthPhase1 + depthPhase2;

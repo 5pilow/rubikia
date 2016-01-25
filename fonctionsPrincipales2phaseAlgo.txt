@@ -1,0 +1,37 @@
+/* Calcule et retourne les mouvements pour résoudre le cube sous forme d'une       *
+ * chaîne de caractères.                                                           *
+ *                                                                                 *
+ * Paramètres :                                                                    *
+ * - facelets : cube représenté sous forme d'une chaîne de caractères.             *
+ * - maxDepth : profondeur maximale de recherche. Avec 21 une solution est trouvée *
+ * en moins d'une seconde, avec 20 en quelques secondes.                           *
+ * - timeOut : temps maximal de calcul pour trouver une solution en ms. Si une     *
+ * solution n'est pas trouvée dans le temps imparti, retourne un code erreur.      *
+ * - useSeparateur : si vrai, un point sera mis dans le résultat entre les étapes  *
+ * de la phase 1 et de la phase 2.                                                 *
+ *                                                                                 *
+ * Codes erreur :                                                                  *
+ * Error 1: Il n'y a pas 9 facettes de chaque couleur                              *
+ * Error 2: Il n'y a pas 12 arêtes uniques                                         *
+ * Error 3: Une des arêtes a été inversée                                          *
+ * Error 4: Il n'y a pas 8 coins uniques                                           *
+ * Error 5: Un coin a été tourné                                                   *
+ * Error 6: Erreur de parité : 2 coins ou 2 arêtes ont été echangés                *
+ * Error 7: Aucune solution n'existe pour la maxDepth donnée                       *
+ * Error 8: Timeout, aucune solution n'a été trouvée dans le temps imparti         */
+var resultat = Search.solution(facelets, maxDepth, timeOut, useSeparator) 
+
+
+/* Vérifie que le cube passé en paramètre est possible à résoudre.                 *
+ *  0: Le cube a une solution                                                      *
+ * -1: Il n'y a pas 9 facettes de chaque couleur                                   *
+ * -2: Il n'y a pas 12 arêtes uniques                                              *
+ * -3: Une des arêtes a été inversée                                               *
+ * -4: Il n'y a pas 8 coins uniques                                                *
+ * -5: Un coin a été tourné                                                        *
+ * -6: Erreur de parité : 2 coins ou 2 arêtes ont été echangés                     */
+var cubeOK = Tools.verify(cubeString)
+
+/* Génère un cube aléatoirement. Retourne le cube sous forme d'une chaîne de       *
+ * caractères.                                                                     */
+var randomCubeString = Tools.randomCube()

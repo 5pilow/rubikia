@@ -28,7 +28,7 @@ Tools.verify = function(s) {
 
 
 /* Génère un cube aléatoirement. Retourne le cube sous forme d'une chaîne de       *
- * caractère                                                                       */
+ * caractères.                                                                     */
 Tools.randomCube = function() {
 	var cubieCube = new CubieCube();
 	cubieCube.setFlip(Math.floor(Math.random() * CoordCube.N_FLIP));
