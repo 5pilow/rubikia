@@ -66,9 +66,11 @@ function init() {
 
 	$('#colors .color').click(function() {
 		current_color = $(this).index()
+		$('#colors .color').removeClass('selected')
+		$(this).addClass('selected')
 	})
 	
-	$('#resolve').click(function() {
+	$('#solve').click(function() {
 		var sol = Search.solution(cubeToString(), 21, 2000, true)
 		$('#script').val(sol)
 	})
@@ -173,7 +175,9 @@ function performSequence(cube, sequence) {
 	cube.repaint(f);
 }
 
-
+/*
+ * Prend un script comme "U R D2 F' L" et le transforme en tableaux de mouvements
+ */
 function parseScript(script) {
 	
 	var moves = script.split(" ");
