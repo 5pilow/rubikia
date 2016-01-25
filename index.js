@@ -39,7 +39,7 @@ function init() {
 			var tile = $(this).index()
 			var face = $(this).parent().index()
 
-			$(this).css('background', $($('#colors .color')[current_color]).css('background'))
+			$(this).css('background-color', $($('#colors .color')[current_color]).css('background-color'))
 
 			cube.cube3d.attributes.stickersFillColor[FACES[face] * 9 + tile] = COLORS[current_color]
 
@@ -60,15 +60,43 @@ function init() {
 	attachVirtualRubik(document.getElementById('canvas'), ready, colors, xRot, yRot)
 
 	$('#faces .face').each(function() {
-		var color = $($('#colors .color')[FACES[$(this).index()]]).css('background')
-		$(this).find('.tile').css('background', color)
+		var color = $($('#colors .color')[FACES[$(this).index()]]).css('background-color')
+		$(this).find('.tile').css('background-color', color)
 	})
 
 	$('#colors .color').click(function() {
 		current_color = $(this).index()
 	})
+	
+	$('#resolve').click(function() {
+		var sol = Search.solution(cubeToString(), 21, 2000, true)
+		$('#script').val(sol)
+	})
+}
 
-
+// Retourne le cube sous forme de chaîne de caractères
+function cubeToString(){
+	// Tableau de correspondance entre couleurs et faces
+	var tab = {"rgb(255, 210, 0)": "U",
+				"rgb(255, 101, 0)": "L",
+				"rgb(0, 0, 255)": "F",
+				"rgb(218, 26, 0)": "R",
+				"rgb(0, 128, 0)": "B",
+				"rgb(255, 255, 255)": "D"}
+	var res = []
+	var i = 0
+	// Tableau de correspondance entre les 2 modèles
+	var faceTab = [0, 4, 2, 1, 5, 3]
+	$("#faces .face").each(function() {
+		res[faceTab[i]] = ""
+		$(this).find('.tile').each(function() {
+			var tile = $(this).css('background-color')
+			res[faceTab[i]] += tab[tile]
+		})
+		i++
+	})
+	console.log(res)
+	return res.join('')
 }
 
 function performReverseSequence(cube, sequence) {
