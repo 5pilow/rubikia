@@ -72,6 +72,33 @@ function init() {
 	
 	$('#solve').click(function() {
 		var sol = Search.solution(cubeToString(), 21, 2000, true)
+    console.log(sol.split(' ')[1])
+        switch (sol.split(' ')[1]) {
+            case "1":
+                sol += " : Il n'y a pas 9 facettes de chaque couleur"
+                break
+            case "2":
+                sol += " : Il n'y a pas 12 arêtes uniques"
+                break
+            case "3":
+                sol += " : Une des arêtes a été inversée"
+                break
+            case "4":
+                sol += " : Il n'y a pas 8 coins uniques"
+                break
+            case "5":
+                sol += " : Un coin a été tourné"
+                break
+            case "6":
+                sol += " : 2 coins ou 2 arêtes ont été echangés"
+                break
+            case "7":
+                sol += " : Aucune solution n'existe pour la maxDepth donnée"
+                break
+            case "8":
+                sol += " : Timeout, aucune solution n'a été trouvée dans le temps imparti"
+                break
+        }
 		$('#script').val(sol)
 	})
 }
@@ -97,7 +124,6 @@ function cubeToString(){
 		})
 		i++
 	})
-	console.log(res)
 	return res.join('')
 }
 
