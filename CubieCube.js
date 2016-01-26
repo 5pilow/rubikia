@@ -1,32 +1,32 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * 
-    CubieCube représente un cube par la position et l'orientation de ses cubes 
-	physiques, ceux que l'on peut tourner (appelés cubies), c'est à dire les coins 
-	et les arêtes (cf baseStruct.js).
+    CubieCube reprÃ©sente un cube par la position et l'orientation de ses cubes 
+	physiques, ceux que l'on peut tourner (appelÃ©s cubies), c'est Ã  dire les coins 
+	et les arÃªtes (cf baseStruct.js).
 	
 	
 	- Explications pour le calcul de la permutation (position) :
-	La permutation d'une arête (ou d'un coin) correspond à l'arête (ou au coin) qui 
-	se trouve à sa position d'origine.
+	La permutation d'une arÃªte (ou d'un coin) correspond Ã  l'arÃªte (ou au coin) qui 
+	se trouve Ã  sa position d'origine.
 	
 	Prenons par exemple le mouvement F pour les coins:
 	Le coin UFL prend la place du coin URF, DLF la place de UFL, DFR la place de
 	DLF et URF la place de DFR.
-	Si on représente cela sous la forme d'un tableau de permutation, on obtient :
+	Si on reprÃ©sente cela sous la forme d'un tableau de permutation, on obtient :
 		URF UFL ULB UBR DFR DLF DBL DRB
 		UFL DLF ULB UBR URF DFR DBL DRB
 	
-	On ne conserve que la deuxième partie du tableau des permutations car la 
-	première est redondante.
+	On ne conserve que la deuxiÃ¨me partie du tableau des permutations car la 
+	premiÃ¨re est redondante.
 	L'ordre des coins est URF UFL ULB UBR DFR DLF DBL DRB.
-	L'ordre des arêtes est UR UF UL UB DR DF DL DB FR FL BL BR.
+	L'ordre des arÃªtes est UR UF UL UB DR DF DL DB FR FL BL BR.
 	
 	
 	
     - Explications pour le calcul de l'orientation :
-	L'orientation se calcule par rapport à l'orientation de la facette de 
-	référence d'un coin ou d'une arête par rapport à l'orientation de la facette
-	de référence du coin ou de l'arête où ils sont.
-	Les facettes de référence sont :
+	L'orientation se calcule par rapport Ã  l'orientation de la facette de 
+	rÃ©fÃ©rence d'un coin ou d'une arÃªte par rapport Ã  l'orientation de la facette
+	de rÃ©fÃ©rence du coin ou de l'arÃªte oÃ¹ ils sont.
+	Les facettes de rÃ©fÃ©rence sont :
                      |U1 U2 U3|
                      |U4 ** U6|
                      |U7 U8 U9|
@@ -37,7 +37,7 @@
                      |D4 ** D6|
                      |D7 D8 D9|
 
-	Prenons par exemple le résultat du mouvement F :
+	Prenons par exemple le rÃ©sultat du mouvement F :
                      |U1 U2 U3|
                      |U4 ** U6|
                      |** ** **|
@@ -47,20 +47,20 @@
                      |** ** **|
                      |D4 ** D6|
                      |D7 D8 D9|
-	Le coin à position URF (haut à droite de la face) a sa facette de référence 
-	tournée dans le sens des aiguilles d'une montre par rapport à la référence.
-	L'arête à la position FR est inversée par rapport à la référence.
+	Le coin Ã  position URF (haut Ã  droite de la face) a sa facette de rÃ©fÃ©rence 
+	tournÃ©e dans le sens des aiguilles d'une montre par rapport Ã  la rÃ©fÃ©rence.
+	L'arÃªte Ã  la position FR est inversÃ©e par rapport Ã  la rÃ©fÃ©rence.
 	
-	L'orientation d'un coin vaut 0 si il n'est pas tourné, 1 si il est tourné dans 
+	L'orientation d'un coin vaut 0 si il n'est pas tournÃ©, 1 si il est tournÃ© dans 
 	le sens des aiguilles d'une montre et 2 si dans le sens contraire des aiguilles 
 	d'une montre.
-	L'orientation d'une arête vaut 0 si elle n'est pas tournée et 1 si elle est 
-	inversée.
+	L'orientation d'une arÃªte vaut 0 si elle n'est pas tournÃ©e et 1 si elle est 
+	inversÃ©e.
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
  
 /* Constructeur de CubieCube.                                                      *
- * Crée le CubieCube à partir des positions,                                       *
- * ou un cube non mélangé par défault.                                             */
+ * CrÃ©e le CubieCube Ã  partir des positions,                                       *
+ * ou un cube non mÃ©langÃ© par dÃ©fault.                                             */
 var CubieCube = function(cornerPermutation, cornerOrientation, edgePermutation, edgeOrientation){
 	// Permutation des coins
 	this.cornerPermutation = typeof cornerPermutation !== 'undefined' ? 
@@ -71,16 +71,16 @@ var CubieCube = function(cornerPermutation, cornerOrientation, edgePermutation, 
 	// Orientation des coins
 	this.cornerOrientation = typeof cornerOrientation !== 'undefined' ? 
 		cornerOrientation.slice() 
-		: // Par defaut
+		: // Par defaut 
 		[0, 0, 0, 0, 0, 0, 0, 0];
 
-	// Permutation des arêtes
+	// Permutation des arÃªtes
 	this.edgePermutation = typeof edgePermutation !== 'undefined' ? 
 		edgePermutation.slice() 
 		: // Par defaut
 		[Edge.UR, Edge.UF, Edge.UL, Edge.UB, Edge.DR, Edge.DF, Edge.DL, Edge.DB, Edge.FR, Edge.FL, Edge.BL, Edge.BR];
 
-	// Orientation des arêtes
+	// Orientation des arÃªtes
 	this.edgeOrientation = typeof edgeOrientation !== 'undefined' ? 
 		edgeOrientation.slice() 
 		: // Par defaut
@@ -88,7 +88,7 @@ var CubieCube = function(cornerPermutation, cornerOrientation, edgePermutation, 
 }
 
 
-/* Correspond à chacun des 6 mouvements de base sur un cube                        */
+/* Correspond Ã  chacun des 6 mouvements de base sur un cube                        */
 CubieCube.moveCube = [];
 // Mouvement U
 CubieCube.moveCube[0] = new CubieCube(
@@ -149,7 +149,7 @@ CubieCube.Cnk = function(n, k) {
 	return s;
 }
 
-/* Décale à gauche tous les éléments du tableau entre l et r (cyclique)            */
+/* DÃ©cale Ã  gauche tous les Ã©lÃ©ments du tableau entre l et r (cyclique)            */
 CubieCube.rotateLeft = function(array, l, r) {
 	var temp = array[l];
 	for (var i = l; i < r; i++) {
@@ -158,7 +158,7 @@ CubieCube.rotateLeft = function(array, l, r) {
 	array[r] = temp;
 }
 
-/* Décale à droite tous les éléments du tableau entre l et r (cyclique)            */
+/* DÃ©cale Ã  droite tous les Ã©lÃ©ments du tableau entre l et r (cyclique)            */
 CubieCube.rotateRight = function(array, l, r){
 	var temp = array[r];
 	for (var i = r; i > l; i--) {
@@ -167,12 +167,12 @@ CubieCube.rotateRight = function(array, l, r){
 	array[l] = temp;
 }
 
-/* Donne la représentation en FaceCube du cube                                     */
+/* Donne la reprÃ©sentation en FaceCube du cube                                     */
 CubieCube.prototype.toFaceCube = function() {
 	var faceCube = new FaceCube();
 	for (var c in Corner) {
 		var i = Corner[c];
-		var j = this.cornerPermutation[i]; // Le coin à l'index j est à la position i
+		var j = this.cornerPermutation[i]; // Le coin Ã  l'index j est Ã  la position i
 		var ori = this.cornerOrientation[i]; // Orientation du coin
 		for (var n = 0; n < 3; n++) {
 			faceCube.f[FaceCube.cornerFacelet[i][(n + ori) % 3]] = FaceCube.cornerColor[j][n];
@@ -180,8 +180,8 @@ CubieCube.prototype.toFaceCube = function() {
 	}
 	for (var e in Edge) {
 		var i = Edge[e];
-		var j = this.edgePermutation[i]; // L'arête à l'index j est à la position i
-		var ori = this.edgeOrientation[i]; // Orientation de l'arête
+		var j = this.edgePermutation[i]; // L'arÃªte Ã  l'index j est Ã  la position i
+		var ori = this.edgeOrientation[i]; // Orientation de l'arÃªte
 		for (var n = 0; n < 2; n++) {
 			faceCube.f[FaceCube.edgeFacelet[i][(n + ori) % 2]] = FaceCube.edgeColor[j][n];
 		}
@@ -191,8 +191,8 @@ CubieCube.prototype.toFaceCube = function() {
 
 
 /* Valeur de l'orientation des 8 coins. (0 <= twist < 3^7)                         *
- * Elle est calculée à partir des 7 premiers coins car la 8ème peut être retrouvée *
- * grâce à la parité.                                                              */
+ * Elle est calculÃ©e Ã  partir des 7 premiers coins car la 8Ã¨me peut Ãªtre retrouvÃ©e *
+ * grÃ¢ce Ã  la paritÃ©.                                                              */
 CubieCube.prototype.getTwist = function() {
 	var ret = 0;
 	for (var i = Corner.URF; i < Corner.DRB; i++) {
@@ -201,8 +201,8 @@ CubieCube.prototype.getTwist = function() {
 	return ret;
 }
 
-/* Récupère la valeur de l'orientation du 8ème coin à partir de la valeur de       *
- * l'orientation des 8 coins grâce à la parité.                                    */
+/* RÃ©cupÃ¨re la valeur de l'orientation du 8Ã¨me coin Ã  partir de la valeur de       *
+ * l'orientation des 8 coins grÃ¢ce Ã  la paritÃ©.                                    */
 CubieCube.prototype.setTwist = function(twist) {
 	var twistParity = 0;
 	for (var i = Corner.DRB - 1; i >= Corner.URF; i--) {
@@ -212,9 +212,9 @@ CubieCube.prototype.setTwist = function(twist) {
 	this.cornerOrientation[Corner.DRB] = (3 - twistParity % 3) % 3;
 }
 
-/* Valeur de l'orientation des 12 arêtes. (0<= flip < 2^11)                        *
- * Elle est calculée à partir des 11 premières arêtes car la 12ème peut être       *
- * retrouvée grâce à la parité.                                                    */
+/* Valeur de l'orientation des 12 arÃªtes. (0<= flip < 2^11)                        *
+ * Elle est calculÃ©e Ã  partir des 11 premiÃ¨res arÃªtes car la 12Ã¨me peut Ãªtre       *
+ * retrouvÃ©e grÃ¢ce Ã  la paritÃ©.                                                    */
 CubieCube.prototype.getFlip = function() {
 	var ret = 0;
 	for (var i = Edge.UR; i < Edge.BR; i++) {
@@ -223,8 +223,8 @@ CubieCube.prototype.getFlip = function() {
 	return ret;
 }
 
-/* Récupère la valeur de l'orientation de la 12ème arête à partir de la valeur de  *
- * l'orientation des 12 arêtes grâce à la parité.                                  */
+/* RÃ©cupÃ¨re la valeur de l'orientation de la 12Ã¨me arÃªte Ã  partir de la valeur de  *
+ * l'orientation des 12 arÃªtes grÃ¢ce Ã  la paritÃ©.                                  */
 CubieCube.prototype.setFlip = function(flip) {
 	var flipParity = 0;
 	for (var i = Edge.BR - 1; i >= Edge.UR; i--) {
@@ -234,7 +234,7 @@ CubieCube.prototype.setFlip = function(flip) {
 	this.edgeOrientation[Edge.BR] = (2 - flipParity % 2) % 2;
 }
 
-/* Calcule la parité des permutations (positions) des coins                        */
+/* Calcule la paritÃ© des permutations (positions) des coins                        */
 CubieCube.prototype.cornerParity = function() {
 	var s = 0;
 	for (var i = Corner.DRB; i >= Corner.URF + 1; i--) {
@@ -247,7 +247,7 @@ CubieCube.prototype.cornerParity = function() {
 	return s % 2;
 }
 
-/* Calcule la parité des permutations (positions) des arêtes                       */
+/* Calcule la paritÃ© des permutations (positions) des arÃªtes                       */
 CubieCube.prototype.edgeParity = function() {
 	var s = 0;
 	for (var i = Edge.BR; i >= Edge.UR + 1; i--) {
@@ -260,11 +260,11 @@ CubieCube.prototype.edgeParity = function() {
 	return s % 2;
 }
 
-/* Permutation des arêtes de la tranche UD : FR, FL, BL et BR                      */
+/* Permutation des arÃªtes de la tranche UD : FR, FL, BL et BR                      */
 CubieCube.prototype.getFRtoBR = function() {
 	var a = 0, x = 0;
 	var edge4 = new Array(4).fill(0);
-	// Calcule l'index a < (4 parmi 12) et les permutations des arêtes
+	// Calcule l'index a < (4 parmi 12) et les permutations des arÃªtes
 	for (var j = Edge.BR; j >= Edge.UR; j--) {
 		if (Edge.FR <= this.edgePermutation[j] && this.edgePermutation[j] <= Edge.BR) {
 			a += CubieCube.Cnk(11 - j, x + 1);
@@ -272,7 +272,7 @@ CubieCube.prototype.getFRtoBR = function() {
 		}
 	}
 	var b = 0;
-	for (var j = 3; j > 0; j--) { // Calcule l'index b < 4! pour les permutations des arêtes
+	for (var j = 3; j > 0; j--) { // Calcule l'index b < 4! pour les permutations des arÃªtes
 		var k = 0;
 		while (edge4[j] != j + 8) {
 			CubieCube.rotateLeft(edge4, 0, j);
@@ -306,11 +306,11 @@ CubieCube.prototype.getURFtoDLF = function() {
 	return 720 * a + b;
 }
 
-/* Permutation des 6 arêtes UR, UF, UL, UB, DR et DF                               */
+/* Permutation des 6 arÃªtes UR, UF, UL, UB, DR et DF                               */
 CubieCube.prototype.getURtoDF = function() {
 	var a = 0, x = 0;
 	var edge6 = new Array(6).fill(0);
-	// Calcule l'index a < (6 parmi 12) et les permutations des arêtes
+	// Calcule l'index a < (6 parmi 12) et les permutations des arÃªtes
 	for (var j = Edge.UR; j <= Edge.BR; j++) {
 		if (this.edgePermutation[j] <= Edge.DF) {
 			a += CubieCube.Cnk(j, x + 1);
@@ -318,7 +318,7 @@ CubieCube.prototype.getURtoDF = function() {
 		}
 	}
 	var b = 0;
-	for (var j = 5; j > 0; j--) { // Calcule l'index b < 6! pour les permutations des arêtes
+	for (var j = 5; j > 0; j--) { // Calcule l'index b < 6! pour les permutations des arÃªtes
 		var k = 0;
 		while (edge6[j] != j) {
 			CubieCube.rotateLeft(edge6, 0, j);
@@ -329,11 +329,11 @@ CubieCube.prototype.getURtoDF = function() {
 	return 720 * a + b;
 }
 
-/* Permutation des 3 arêtes UR, UF et UL                                           */
+/* Permutation des 3 arÃªtes UR, UF et UL                                           */
 CubieCube.prototype.getURtoUL = function() {
 	var a = 0, x = 0;
 	var edge3 = new Array(3).fill(0);
-	// Calcule l'index a < (3 parmi 12) et les permutations des arêtes
+	// Calcule l'index a < (3 parmi 12) et les permutations des arÃªtes
 	for (var j = Edge.UR; j <= Edge.BR; j++)
 		if (this.edgePermutation[j] <= Edge.UL) {
 			a += CubieCube.Cnk(j, x + 1);
@@ -341,7 +341,7 @@ CubieCube.prototype.getURtoUL = function() {
 		}
 
 	var b = 0;
-	for (var j = 2; j > 0; j--) { // Calcule l'index b < 3! pour les permutations des arêtes
+	for (var j = 2; j > 0; j--) { // Calcule l'index b < 3! pour les permutations des arÃªtes
 		var k = 0;
 		while (edge3[j]	!= j) {
 			CubieCube.rotateLeft(edge3, 0, j);
@@ -358,16 +358,16 @@ CubieCube.prototype.setURtoUL = function(idx) {
 	var b = idx % 6; // Permutation
 	var a = idx / 6 | 0; // Combinaison
 	for (var e in Edge) {
-		this.edgePermutation[Edge[e]] = Edge.BR; // Reset les arêtes
+		this.edgePermutation[Edge[e]] = Edge.BR; // Reset les arÃªtes
 	}
-	for (var j = 1, k; j < 3; j++) { // Genère les permutation à partir de l'index b
+	for (var j = 1, k; j < 3; j++) { // GenÃ¨re les permutation Ã  partir de l'index b
 		k = b % (j + 1);
 		b = b / (j + 1) | 0;
 		while (k-- > 0) {
 			CubieCube.rotateRight(edge3, 0, j);
 		}
 	}
-	x = 2; // Genère les combinaisons et les ensembles d'arêtes
+	x = 2; // GenÃ¨re les combinaisons et les ensembles d'arÃªtes
 	for (var j = Edge.BR; j >= 0; j--) {
 		if (a - CubieCube.Cnk(j, x + 1) >= 0) {
 			this.edgePermutation[j] = edge3[x];
@@ -376,11 +376,11 @@ CubieCube.prototype.setURtoUL = function(idx) {
 	}
 }
 
-/* Permutation des 3 arêtes UB, DR et DF                                           */
+/* Permutation des 3 arÃªtes UB, DR et DF                                           */
 CubieCube.prototype.getUBtoDF = function() {
 	var a = 0, x = 0;
 	var edge3 = new Array(3).fill(0);
-	// Calcule l'index a < (3 parmi 12) et les permutations des arêtes
+	// Calcule l'index a < (3 parmi 12) et les permutations des arÃªtes
 	for (var j = Edge.UR; j <= Edge.BR; j++) {
 		if (Edge.UB <= this.edgePermutation[j] && this.edgePermutation[j] <= Edge.DF) {
 			a += CubieCube.Cnk(j, x + 1);
@@ -388,7 +388,7 @@ CubieCube.prototype.getUBtoDF = function() {
 		}
 	}
 	var b = 0;
-	for (var j = 2; j > 0; j--) { // Calcule l'index b < 3! pour les permutations des arêtes
+	for (var j = 2; j > 0; j--) { // Calcule l'index b < 3! pour les permutations des arÃªtes
 		var k = 0;
 		while (edge3[j] != Edge.UB + j) {
 			CubieCube.rotateLeft(edge3, 0, j);
@@ -405,16 +405,16 @@ CubieCube.prototype.setUBtoDF = function(idx) {
 	var b = idx % 6; // Permutation
 	var a = idx / 6 | 0; // Combinaison
 	for (var e in Edge) {
-		this.edgePermutation[Edge[e]] = Edge.BR; // Reset les arêtes
+		this.edgePermutation[Edge[e]] = Edge.BR; // Reset les arÃªtes
 	}
-	for (var j = 1, k; j < 3; j++) { // Genère les permutation à partir de l'index b
+	for (var j = 1, k; j < 3; j++) { // GenÃ¨re les permutation Ã  partir de l'index b
 		k = b % (j + 1);
 		b = b / (j + 1) | 0;
 		while (k-- > 0) {
 			CubieCube.rotateRight(edge3, 0, j);
 		}
 	}
-	x = 2; // Genère les combinaisons et les ensembles d'arêtes
+	x = 2; // GenÃ¨re les combinaisons et les ensembles d'arÃªtes
 	for (var j = Edge.BR; j >= 0; j--) {
 		if (a - CubieCube.Cnk(j, x + 1) >= 0) {
 			this.edgePermutation[j] = edge3[x];
@@ -423,7 +423,7 @@ CubieCube.prototype.setUBtoDF = function(idx) {
 	}
 }
 
-/* Permutation des 6 arêtes UR, UF, UL, UB, DR et DF                               */
+/* Permutation des 6 arÃªtes UR, UF, UL, UB, DR et DF                               */
 CubieCube.prototype.getURtoDF = function(idx1, idx2) {
 	var cubeA = new CubieCube();
 	var cubeB = new CubieCube();
@@ -484,19 +484,19 @@ CubieCube.prototype.setURtoBR = function(idx) {
 			CubieCube.rotateRight(perm, 0, j);
 		}
 	}
-	var x = 11; // Rempli les arêtes
+	var x = 11; // Rempli les arÃªtes
 	for (var j = 11; j >= 0; j--) {
 		this.edgePermutation[j] = perm[x--];
 	}
 }
 
-/* Vérifie qu'un cube est possible à résoudre. Retourne un code erreur.            *
+/* VÃ©rifie qu'un cube est possible Ã  rÃ©soudre. Retourne un code erreur.            *
  *  0: Le cube a une solution                                                      *
- * -2: Il n'y a pas 12 arêtes uniques                                              *
- * -3: Une des arêtes a été inversée                                               *
+ * -2: Il n'y a pas 12 arÃªtes uniques                                              *
+ * -3: Une des arÃªtes a Ã©tÃ© inversÃ©e                                               *
  * -4: Il n'y a pas 8 coins uniques                                                *
- * -5: Un coin a été tourné                                                        *
- * -6: Erreur de parité : 2 coins ou 2 arêtes ont été echangés                     */
+ * -5: Un coin a Ã©tÃ© tournÃ©                                                        *
+ * -6: Erreur de paritÃ© : 2 coins ou 2 arÃªtes ont Ã©tÃ© echangÃ©s                     */
 CubieCube.prototype.verify = function() {
 	var sum = 0;
 	var edgeCount = new Array(12).fill(0);
@@ -505,14 +505,14 @@ CubieCube.prototype.verify = function() {
 	}
 	for (var i = 0; i < 12; i++) {
 		if (edgeCount[i] != 1) {
-			return -2; // Il n'y a pas 12 arêtes uniques 
+			return -2; // Il n'y a pas 12 arÃªtes uniques 
 		}
 	}
 	for (var i = 0; i < 12; i++) {
 		sum += this.edgeOrientation[i];
 	}
 	if (sum % 2 != 0){
-		return -3; // Une des arêtes a été inversée 
+		return -3; // Une des arÃªtes a Ã©tÃ© inversÃ©e 
 	}
 	var cornerCount = new Array(8).fill(0);
 	for (var c in Corner) {
@@ -528,10 +528,10 @@ CubieCube.prototype.verify = function() {
 		sum += this.cornerOrientation[i];
 	}
 	if (sum % 3 != 0) {
-		return -5; // Un coin a été tourné
+		return -5; // Un coin a Ã©tÃ© tournÃ©
 	}
 	if ((this.edgeParity() ^ this.cornerParity()) != 0) {
-		return -6; // Erreur de parité : 2 coins ou 2 arêtes ont été echangés
+		return -6; // Erreur de paritÃ© : 2 coins ou 2 arÃªtes ont Ã©tÃ© echangÃ©s
 	}
 	return 0; // Le cube a une solution
 }

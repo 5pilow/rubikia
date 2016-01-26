@@ -11,11 +11,11 @@ Search.twist = new Array(31).fill(0);
 Search.slice = new Array(31).fill(0);
 
 Search.parity = new Array(31).fill(0); // Coordonnées phase 2
-Search.URFtoDLF = new Array(31).fill(0);
-Search.FRtoBR = new Array(31).fill(0);
-Search.URtoUL = new Array(31).fill(0);
-Search.UBtoDF = new Array(31).fill(0);
-Search.URtoDF = new Array(31).fill(0);
+Search.URFtoDLF = new Array(31).fill(0); // "F2"
+Search.FRtoBR = new Array(31).fill(0); // "R2"
+Search.URtoUL = new Array(31).fill(0); // "U2"
+Search.UBtoDF = new Array(31).fill(0); // "M2"
+Search.URtoDF = new Array(31).fill(0); // "U' F2"
 
 Search.minDistPhase1 = new Array(31).fill(0); // Estimations de la distance au but pour IDA*
 Search.minDistPhase2 = new Array(31).fill(0);
@@ -158,7 +158,8 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 	Search.UBtoDF[0] = coordCube.UBtoDF;
 
 	Search.minDistPhase1[1] = 1; // Sinon échec pour depth=1 et n=0
-	var mv = 0, n = 0;
+	var mv = 0;
+	var n = 0;
 	var busy = false;
 	var depthPhase1 = 1;
 
@@ -209,13 +210,18 @@ Search.solution = function(facelets, maxDepth, timeOut, useSeparator) {
 		} while (busy);
 
 		// Calcule les nouvelles coordonées et la nouvelle distance min  pour la phase 1 (minDistPhase1)
-		// Si minDistPhase1=0, alors le sous groupe H est atteind
-		mv = 3 * Search.ax[n] + Search.po[n] - 1;
+		// Si minDistPhase1 = 0, alors le sous groupe H est atteind
+
+		mv = 3 * Search.ax[n] + Search.po[n] - 1; // Numéro du mouvement (parmi les 18)
+
 		Search.flip[n + 1] = CoordCube.flipMove[Search.flip[n]][mv];
 		Search.twist[n + 1] = CoordCube.twistMove[Search.twist[n]][mv];
 		Search.slice[n + 1] = CoordCube.FRtoBR_Move[Search.slice[n] * 24][mv] / 24 | 0;
-		Search.minDistPhase1[n + 1] = Math.max(CoordCube.getPruning(CoordCube.Slice_Flip_Prun, CoordCube.N_SLICE1 * Search.flip[n + 1]
-				+ Search.slice[n + 1]), CoordCube.getPruning(CoordCube.Slice_Twist_Prun, CoordCube.N_SLICE1 * Search.twist[n + 1] + Search.slice[n + 1]));
+
+		Search.minDistPhase1[n + 1] = Math.max(
+			CoordCube.getPruning(CoordCube.Slice_Flip_Prun, CoordCube.N_SLICE1 * Search.flip[n + 1] + Search.slice[n + 1]), 
+			CoordCube.getPruning(CoordCube.Slice_Twist_Prun, CoordCube.N_SLICE1 * Search.twist[n + 1] + Search.slice[n + 1])
+		);
 		
 		if (Search.minDistPhase1[n + 1] == 0 && n >= depthPhase1 - 5) {
 			Search.minDistPhase1[n + 1] = 10; // A la place de 10, n'importe quelle valeur >5 est possible
@@ -319,10 +325,10 @@ Search.totalDepth = function(depthPhase1, maxDepth) {
 		Search.parity[n + 1] = CoordCube.parityMove[Search.parity[n]][mv];
 		Search.URtoDF[n + 1] = CoordCube.URtoDF_Move[Search.URtoDF[n]][mv];
 
-		Search.minDistPhase2[n + 1] = Math.max(CoordCube.getPruning(CoordCube.Slice_URtoDF_Parity_Prun, (CoordCube.N_SLICE2
-				* Search.URtoDF[n + 1] + Search.FRtoBR[n + 1]) * 2 + Search.parity[n + 1]),
-				CoordCube.getPruning(CoordCube.Slice_URFtoDLF_Parity_Prun, (CoordCube.N_SLICE2
-				* Search.URFtoDLF[n + 1] + Search.FRtoBR[n + 1]) * 2 + Search.parity[n + 1]));
+		Search.minDistPhase2[n + 1] = Math.max(
+			CoordCube.getPruning(CoordCube.Slice_URtoDF_Parity_Prun, (CoordCube.N_SLICE2 * Search.URtoDF[n + 1] + Search.FRtoBR[n + 1]) * 2 + Search.parity[n + 1]),
+			CoordCube.getPruning(CoordCube.Slice_URFtoDLF_Parity_Prun, (CoordCube.N_SLICE2 * Search.URFtoDLF[n + 1] + Search.FRtoBR[n + 1]) * 2 + Search.parity[n + 1])
+		);
 
 	} while (Search.minDistPhase2[n + 1] != 0);
 	return depthPhase1 + depthPhase2;

@@ -25,8 +25,7 @@
  * Crée le FaceCube représenté par la chaine de caractère passée en paramètre,     *
  * ou un cube non mélangé par défault.                                             */
 function FaceCube(cubeString) {
-	this.f = typeof cubeString !== 'undefined' ? 
-		cubeString.split('').map((c)=>Color[c])
+	this.f = typeof cubeString !== 'undefined' ? cubeString.split('')
 		: // Par defaut
 		[Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, Color.U, 
 		Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R, Color.R,
