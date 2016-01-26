@@ -72,7 +72,6 @@ function init() {
 	
 	$('#solve').click(function() {
 		var sol = Search.solution(cubeToString(), 21, 2000, true)
-    console.log(sol.split(' ')[1])
         switch (sol.split(' ')[1]) {
             case "1":
                 sol += " : Il n'y a pas 9 facettes de chaque couleur"
