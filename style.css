@@ -6,6 +6,17 @@ body {
 	display: inline-block;
 }
 
+#update_buttons {
+	display: inline-block;
+	vertical-align: top;
+	padding-top: 240px;
+}
+
+#update_2d, #update_3d {
+	font-size: 20px;
+	margin: 5px;
+}
+
 #faces {
 	width: 650px;
 	display: inline-block;
@@ -79,18 +90,26 @@ body {
 	background: #FF6500;
 }
 
-#script {
+#script, #max-moves, #time {
 	padding: 5px;
 	font-size: 20px;
-	width: 800px;
 	text-align: center;
 	margin-bottom: 5px;
 	margin-top: 20px;
 	border-radius: 2px;
 	outline: none;
+	width: 100px;
 }
 
-#move, #solve {
+#script {
+	width: 800px;
+}
+
+#moves {
+	font-size: 18px;
+}
+
+#move, #solve, #reset {
 	width: 100px;
 	font-size: 16px;
 	margin: 3px;

@@ -32,7 +32,18 @@ function init() {
 	/*
 	 * Quand le cube est prêt
 	 */
-	var ready = function(cube) {
+	var ready = function(new_cube) {
+
+		cube = new_cube
+
+		$('#faces .tile').each(function() {
+
+			var tile = $(this).index()
+			var face = $(this).parent().index()
+
+			$(this).css('background-color', $($('#colors .color')[FACES[face]]).css('background-color'))
+			$(this).attr('color', FACES[face])
+		})
 
 		$('#faces .tile').click(function() {
 
@@ -40,24 +51,25 @@ function init() {
 			var face = $(this).parent().index()
 
 			$(this).css('background-color', $($('#colors .color')[current_color]).css('background-color'))
+			$(this).attr('color', current_color)
 
 			cube.cube3d.attributes.stickersFillColor[FACES[face] * 9 + tile] = COLORS[current_color]
-
 			cube.repaint()
 		})
 
-		$('#move').click(function() {
-
-			var script = $('#script').val()
-			var seq = parseScript(script)
-			performSequence(cube, seq)
-		})
+		// cube.cube.addCubeListener({cubeTwisted: function() {
+		// 	console.log("move")
+		// 	console.log(cube)
+		// }})
 	}
 	
 	/*
 	 * Initialisation du cube
 	 */
-	attachVirtualRubik(document.getElementById('canvas'), ready, colors, xRot, yRot)
+	var reset = function() {
+		attachVirtualRubik(document.getElementById('canvas'), ready, colors, xRot, yRot)
+	}
+	reset()
 
 	$('#faces .face').each(function() {
 		var color = $($('#colors .color')[FACES[$(this).index()]]).css('background-color')
@@ -69,15 +81,65 @@ function init() {
 		$('#colors .color').removeClass('selected')
 		$(this).addClass('selected')
 	})
+
+	/*
+	 * Bouton update
+	 */
+	$('#update_3d').click(function() {
+
+		attachVirtualRubik(document.getElementById('canvas'), function(new_cube) {
+
+			cube = new_cube
+
+			$('#faces .tile').each(function() {
+
+				var tile = $(this).index()
+				var face = $(this).parent().index()
+				cube.cube3d.attributes.stickersFillColor[FACES[face] * 9 + tile] = COLORS[$(this).attr('color')]
+				cube.repaint()
+			})
+
+		}, colors, xRot, yRot)
+	})
+
+	/*
+	 * Bouton reset
+	 */
+	$('#reset').click(function() {
+		$('#script').val('')
+		$('#moves').text('')
+		reset()
+	})
 	
+	/*
+	 * Bouton solve
+	 */ 
 	$('#solve').click(function() {
-		var sol = Search.solution(cubeToString(), 21, 2000, true)
+
+		var facelets = cubeToString()
+		var moves = $('#max-moves').val()
+		var time = $('#time').val()
+
+		var sol = Search.solution(facelets, moves, time, true)
 		$('#script').val(sol)
+
+		$('#moves').text(sol.replace(' . ', '').split(' ').length + ' moves')
+	})
+
+	/*
+	 * Excute button
+	 */
+	$('#move').click(function() {
+
+		var script = $('#script').val()
+		var seq = parseScript(script)
+		performSequence(cube, seq)
 	})
 }
 
 // Retourne le cube sous forme de chaîne de caractères
-function cubeToString(){
+function cubeToString() {
+
 	// Tableau de correspondance entre couleurs et faces
 	var tab = {"rgb(255, 210, 0)": "U",
 				"rgb(255, 101, 0)": "L",
@@ -87,6 +149,7 @@ function cubeToString(){
 				"rgb(255, 255, 255)": "D"}
 	var res = []
 	var i = 0
+
 	// Tableau de correspondance entre les 2 modèles
 	var faceTab = [0, 4, 2, 1, 5, 3]
 	$("#faces .face").each(function() {

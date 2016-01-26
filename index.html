@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8" />
-		<title>Virtual Rubik's Cube with WebGL</title>
+		<title>Rubik'IA</title>
 		<script src="jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
 		<script type="text/javascript" src="lib3dcube/virtualrubik.js"></script>
 		<script type="text/javascript">includeVirtualRubik("lib3dcube");</script>
@@ -22,6 +22,12 @@
 	<body onLoad="init()">
 
 		<canvas id="canvas" class="virtualrubik" width="500" height="500"></canvas>
+
+		<div id='update_buttons'>
+			<button id='update_3d'>&lt;&lt;&lt;</button>
+			<br>
+			<button id='update_2d'>&gt;&gt;&gt;</button>
+		</div>
 
 		<div id='faces'>
 			<div class='face top'>
@@ -47,9 +53,13 @@
 		<br>
 		<center>
 			<input id='script' type='text'>
+			<input id='max-moves' type='number' value='21'>
+			<input id='time' type='number' value='5000'>
+			<span id='moves'></span>
 			<br>
-			<button id='move'>Execute</button>
+			<button id='reset'>Reset</button>
 			<button id='solve'>Solve</button>
+			<button id='move'>Execute</button>
 		</center>
 
 	</body>
