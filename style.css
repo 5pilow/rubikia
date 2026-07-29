@@ -1,116 +1,275 @@
+/* Rubik'IA — habillage. Le fond du canvas WebGL est transparent (backgroundColor
+   [0,0,0,0] dans cubeattributes.js), le cube se pose donc directement sur la page. */
+
+:root {
+	--accent: #ffd500;
+	--bg: #11161d;
+	--panel: #171e27;
+	--border: rgba(255, 255, 255, .12);
+	--text: #e8edf4;
+	--muted: #8fa3bb;
+	/* Taille d'une facette du patron : c'est elle qui fait tenir le patron sur un
+	   téléphone comme sur un écran large. */
+	--tile: clamp(15px, 5.6vw, 34px);
+}
+
+* { box-sizing: border-box; }
+
 body {
-	background: #eee;
+	font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+	background: var(--bg);
+	color: var(--text);
+	margin: 0;
+	padding: 0 16px max(24px, env(safe-area-inset-bottom));
+	line-height: 1.6;
 }
 
+header {
+	text-align: center;
+	padding: 32px 0 8px;
+}
+h1 {
+	margin: 0;
+	font-size: clamp(30px, 8vw, 44px);
+	letter-spacing: -0.5px;
+	text-transform: uppercase;
+}
+.tagline {
+	margin: 6px auto 0;
+	max-width: 560px;
+	color: var(--muted);
+}
+
+main {
+	max-width: 1080px;
+	margin: 0 auto;
+}
+
+/* ---------- Cube 3D et patron ---------- */
+
+.stage {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: flex-start;
+	gap: 10px 40px;
+	margin-top: 12px;
+}
+
+.cube, .net { flex: 0 1 auto; text-align: center; }
+
+/* La bibliothèque lit canvas.clientWidth à chaque image pour son viewport, mais ne
+   touche jamais à la taille du tampon de rendu : index.js recopie l'une dans l'autre
+   au redimensionnement, sinon le rendu se retrouve décalé. */
 #canvas {
-	display: inline-block;
+	display: block;
+	width: min(460px, 88vw);
+	aspect-ratio: 1;
+	height: auto;
+	touch-action: none;
+	cursor: grab;
 }
+#canvas:active { cursor: grabbing; }
 
-#update_buttons {
-	display: inline-block;
-	vertical-align: top;
-	padding-top: 240px;
-}
-
-#update_2d, #update_3d {
-	font-size: 20px;
-	margin: 5px;
+.hint {
+	margin: 4px auto 0;
+	max-width: 320px;
+	font-size: 13px;
+	color: var(--muted);
 }
 
 #faces {
-	width: 650px;
-	display: inline-block;
-	margin-left: 100px;
+	display: grid;
+	grid-template-columns: repeat(4, auto);
+	gap: calc(var(--tile) / 4);
+	justify-content: center;
+	margin-top: 10px;
 }
+/* Patron en croix : U au-dessus de F, la ceinture L F R B, D en dessous. */
+.face[data-face="U"] { grid-area: 1 / 2; }
+.face[data-face="L"] { grid-area: 2 / 1; }
+.face[data-face="F"] { grid-area: 2 / 2; }
+.face[data-face="R"] { grid-area: 2 / 3; }
+.face[data-face="B"] { grid-area: 2 / 4; }
+.face[data-face="D"] { grid-area: 3 / 2; }
 
-#faces .face {
-	width: 150px;
-	height: 150px;
-	display: inline-block;
-	margin: 5px;
+.face {
+	display: grid;
+	grid-template-columns: repeat(3, var(--tile));
+	gap: 2px;
 }
-
-#faces .face .tile {
-	width: 48px;
-	height: 48px;
-	background: #eee;
-	display: inline-block;
-	border: 1px solid #ccc;
-	vertical-align: top;
+.tile {
+	width: var(--tile);
+	height: var(--tile);
+	border-radius: calc(var(--tile) / 6);
 	cursor: pointer;
-	border-radius: 5px;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35);
 }
-
-#faces .face.top {
-	margin-left: 165px;
-	margin-right: 300px;
-}
-
-#faces .face.bottom {
-	margin-left: 165px;
+/* La facette centrale définit la couleur de sa face : la repeindre n'aurait pas de
+   sens, on la marque comme non cliquable. */
+.tile.center { cursor: default; }
+.tile.center::after {
+	content: '';
+	display: block;
+	width: 26%;
+	height: 26%;
+	margin: 37%;
+	border-radius: 50%;
+	background: rgba(0, 0, 0, .3);
 }
 
 #colors {
-	margin-top: 50px;
-	text-align: center;
+	margin-top: 16px;
+	display: flex;
+	justify-content: center;
+	gap: 10px;
 }
-
 #colors .color {
-	display: inline-block;
-	width: 48px;
-	height: 48px;
-	border: 1px solid #ccc;
+	width: 38px;
+	height: 38px;
+	border-radius: 8px;
 	cursor: pointer;
-	margin-right: 10px;
-	border-radius: 5px;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .35);
+	outline: 3px solid transparent;
+	outline-offset: 3px;
 }
+#colors .color.selected { outline-color: var(--text); }
 
-#colors .color.selected {
-	width: 40px;
-	height: 40px;
-	border: 5px solid #555;
-}
+/* ---------- Commandes ---------- */
 
-#colors .color.white {
-	background: white;
+.controls {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 10px;
+	margin-top: 26px;
 }
-#colors .color.red {
-	background: #DA1A00;
+button {
+	font: inherit;
+	font-weight: bold;
+	padding: 12px 22px;
+	border-radius: 10px;
+	border: 1px solid var(--border);
+	background: var(--panel);
+	color: var(--text);
+	cursor: pointer;
 }
-#colors .color.blue {
-	background: blue;
+button:hover:not(:disabled) { background: #202a36; }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled { opacity: .45; cursor: default; }
+button.primary {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: #1a1500;
 }
-#colors .color.green {
-	background: green;
-}
-#colors .color.yellow {
-	background: #FFD200;
-}
-#colors .color.orange {
-	background: #FF6500;
-}
+button.primary:hover:not(:disabled) { background: #ffe14d; }
 
-#script, #max-moves, #time {
-	padding: 5px;
-	font-size: 20px;
+.output {
+	margin: 22px auto 0;
+	max-width: 760px;
 	text-align: center;
-	margin-bottom: 5px;
-	margin-top: 20px;
-	border-radius: 2px;
-	outline: none;
-	width: 100px;
 }
-
+/* La séquence est un champ de saisie et non un simple affichage : on peut y écrire
+   la sienne et l'exécuter. Il est habillé pour se fondre dans la page. */
 #script {
-	width: 800px;
+	width: 100%;
+	font: inherit;
+	font-size: clamp(15px, 3.4vw, 20px);
+	font-weight: bold;
+	letter-spacing: 1px;
+	word-spacing: 4px;
+	text-align: center;
+	padding: 10px 12px;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--panel);
+	color: var(--text);
 }
-
-#moves {
-	font-size: 18px;
+#script:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
+#script::placeholder { font-weight: normal; letter-spacing: 0; color: #5d6d80; }
+#status {
+	margin-top: 6px;
+	font-size: 14px;
+	color: var(--muted);
+	min-height: 22px;
 }
+#status.error { color: #ff8b7d; }
 
-#move, #solve, #reset {
-	width: 100px;
-	font-size: 16px;
-	margin: 3px;
+#settings {
+	max-width: 760px;
+	margin: 22px auto 0;
+	padding: 0 18px;
+	background: var(--panel);
+	border: 1px solid var(--border);
+	border-radius: 12px;
+}
+#settings summary {
+	padding: 14px 0;
+	cursor: pointer;
+	font-weight: bold;
+	color: var(--muted);
+}
+#settings[open] summary { border-bottom: 1px solid var(--border); }
+#settings .option {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin: 14px 0;
+}
+#settings input {
+	font: inherit;
+	width: 110px;
+	padding: 8px 10px;
+	text-align: center;
+	border-radius: 8px;
+	border: 1px solid var(--border);
+	background: var(--bg);
+	color: var(--text);
+}
+#settings p { font-size: 14px; color: var(--muted); }
+
+/* ---------- Explications et pied de page ---------- */
+
+.about {
+	max-width: 760px;
+	margin: 40px auto 0;
+	color: #cfd8e4;
+}
+.about h2 {
+	font-size: 15px;
+	text-transform: uppercase;
+	letter-spacing: 1.2px;
+	color: var(--muted);
+}
+.about a, .foot a { color: #7ab8ff; }
+
+.foot {
+	max-width: 760px;
+	margin: 36px auto 0;
+	padding-top: 16px;
+	border-top: 1px solid var(--border);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px 16px;
+	justify-content: center;
+	font-size: 13px;
+	color: #8595a8;
+}
+.foot a { color: #8595a8; }
+
+/* Sur un écran étroit le cube 3D et le patron s'empilent : on resserre les marges
+   pour que les boutons restent visibles sans défiler jusqu'en bas. */
+@media (max-width: 560px) {
+	header { padding-top: 20px; }
+	.stage { gap: 4px; }
+	/* En ligne souple, les quatre boutons se répartissaient en 3 + 1 ; une grille de
+	   deux colonnes donne un bloc franc. */
+	.controls {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		margin-top: 18px;
+	}
+	button { padding: 12px 10px; }
 }

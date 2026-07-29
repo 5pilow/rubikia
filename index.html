@@ -1,66 +1,123 @@
-<!DOCTYPE HTML>
-<html>
-	<head>
-		<meta charset="utf-8" />
-		<title>Rubik'IA</title>
-		<script src="jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
-		<script type="text/javascript" src="lib3dcube/virtualrubik.js"></script>
-		<script type="text/javascript">includeVirtualRubik("lib3dcube");</script>
-		<script type="text/javascript" src="index.js"></script>
-		
-		<!-- A faire en plus joli    -->
-		<script type="text/javascript" src="baseStructs.js"></script>
-		<script type="text/javascript" src="FaceCube.js"></script>
-		<script type="text/javascript" src="CubieCube.js"></script>
-		<script type="text/javascript" src="CoordCube.js"></script>
-		<script type="text/javascript" src="search.js"></script>
-		<script type="text/javascript" src="Tools.js"></script>
-		
-		<link href='style.css' rel='stylesheet' type='text/css'>
-	</head>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<title>Rubik'IA, résolveur de Rubik's cube en ligne</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+	<meta name="description" content="Entrez les couleurs de votre Rubik's cube, obtenez une solution en une vingtaine de mouvements. Algorithme deux phases de Kociemba, exécuté dans votre navigateur. Gratuit, sans installation.">
+	<meta name="theme-color" content="#11161d">
+	<link rel="canonical" href="https://rubikia.pilow.fr/">
+	<link rel="icon" href="favicon.svg" type="image/svg+xml">
 
-	<body onLoad="init()">
+	<meta property="og:type" content="website">
+	<meta property="og:site_name" content="Rubik'IA">
+	<meta property="og:title" content="Rubik'IA, résolveur de Rubik's cube en ligne">
+	<meta property="og:description" content="Entrez les couleurs de votre Rubik's cube, obtenez une solution en une vingtaine de mouvements. Algorithme deux phases de Kociemba, exécuté dans votre navigateur.">
+	<meta property="og:url" content="https://rubikia.pilow.fr/">
+	<meta name="twitter:card" content="summary">
+	<meta name="twitter:title" content="Rubik'IA, résolveur de Rubik's cube en ligne">
+	<meta name="twitter:description" content="Entrez les couleurs de votre Rubik's cube, obtenez une solution en une vingtaine de mouvements.">
 
-		<canvas id="canvas" class="virtualrubik" width="500" height="500"></canvas>
+	<link href="style.css" rel="stylesheet" type="text/css">
 
-		<div id='update_buttons'>
-			<button id='update_3d'>&lt;&lt;&lt;</button>
-			<br>
-			<button id='update_2d'>&gt;&gt;&gt;</button>
+	<script src="jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
+	<!-- includeVirtualRubik écrit les balises de la bibliothèque 3D avec
+	     document.write : elle doit rester exécutée pendant l'analyse du document. -->
+	<script src="lib3dcube/virtualrubik.js" type="text/javascript"></script>
+	<script type="text/javascript">includeVirtualRubik("lib3dcube");</script>
+	<!-- Le solveur (search.js et ses 18 Mo de tables) n'est PAS chargé ici : index.js
+	     va le chercher en arrière-plan pour que le cube s'affiche tout de suite. -->
+	<script src="index.js" type="text/javascript" defer></script>
+</head>
+
+<body>
+
+<header>
+	<h1>Rubik'IA</h1>
+	<p class="tagline">Donnez-lui les couleurs de votre Rubik's cube, il vous rend une solution en une vingtaine de mouvements.</p>
+</header>
+
+<main>
+	<section class="stage">
+
+		<div class="cube">
+			<canvas id="canvas" class="virtualrubik" width="500" height="500"></canvas>
+			<p class="hint">Glissez sur le cube pour le faire pivoter et voir les faces cachées.</p>
 		</div>
 
-		<div id='faces'>
-			<div class='face top'>
-				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
-			</div><div class='face left'>
-				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
-			</div><div class='face front'>
-				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
-			</div><div class='face right'>
-				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
-			</div><div class='face back'>
-				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
-			</div><div class='face bottom'>
-				<span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span><span class='tile'></span>
+		<div class="net">
+			<div id="faces">
+				<div class="face" data-face="U"></div>
+				<div class="face" data-face="L"></div>
+				<div class="face" data-face="F"></div>
+				<div class="face" data-face="R"></div>
+				<div class="face" data-face="B"></div>
+				<div class="face" data-face="D"></div>
 			</div>
-
-			<div id='colors'>
-				<span class='color red selected'></span><span class='color yellow'></span><span class='color blue'></span><span class='color orange'></span><span class='color white'></span><span class='color green'></span>
+			<p class="hint">Choisissez une couleur, puis cliquez les facettes de votre vrai cube.</p>
+			<div id="colors">
+				<span class="color selected" data-face="U"></span><span class="color" data-face="R"></span><span class="color" data-face="F"></span><span class="color" data-face="D"></span><span class="color" data-face="L"></span><span class="color" data-face="B"></span>
 			</div>
 		</div>
 
-		<br>
-		<br>
-		<center>
-			<input id='script' type='text'>
-			<input id='max-moves' type='number' value='21'>
-			<input id='time' type='number' value='5000'>
-			<span id='moves'></span>
-			<br>
-			<button id='reset'>Reset</button>
-			<button id='solve'>Solve</button>
-			<button id='move'>Execute</button>
-		</center>
+	</section>
 
-	</body>
-</html> 
+	<section class="controls">
+		<button id="scramble" type="button">Mélanger</button>
+		<button id="solve" type="button" class="primary" disabled>Résoudre</button>
+		<button id="run" type="button" disabled>Exécuter</button>
+		<button id="reset" type="button">Réinitialiser</button>
+	</section>
+
+	<section class="output">
+		<!-- Champ modifiable : on peut y taper sa propre séquence et l'exécuter, comme
+		     dans la version de 2016. La notation est la notation officielle du cube. -->
+		<input id="script" type="text" spellcheck="false" autocomplete="off"
+			placeholder="U R2 F' L D…" aria-label="Séquence de mouvements">
+		<div id="status">Chargement du solveur…</div>
+	</section>
+
+	<details id="settings">
+		<summary>Réglages du solveur</summary>
+		<div class="option">
+			<label for="max-moves">Longueur maximale de la solution</label>
+			<input id="max-moves" type="number" value="21" min="20" max="30">
+		</div>
+		<div class="option">
+			<label for="time">Temps de recherche maximal (ms)</label>
+			<input id="time" type="number" value="5000" min="100" max="60000" step="100">
+		</div>
+		<p>Une solution de 21 mouvements existe toujours et se trouve en quelques
+		millisecondes. Descendre à 20 demande souvent bien plus de recherche.</p>
+	</details>
+
+	<section class="about">
+		<h2>Comment ça marche</h2>
+		<p>Résoudre un Rubik's cube en un minimum de mouvements est un problème coûteux :
+		il existe 43 milliards de milliards de positions, et on sait depuis 2010 qu'aucune
+		n'exige plus de 20 mouvements. Explorer cet espace de front est hors de portée.</p>
+		<p>Rubik'IA utilise l'<strong>algorithme deux phases de Herbert Kociemba</strong>,
+		qui contourne le problème en deux temps. La première phase amène le cube dans un
+		sous-groupe particulier, celui des positions qu'on peut finir sans jamais tourner
+		une face d'un quart de tour sur deux des trois axes. La seconde phase termine à
+		l'intérieur de ce sous-groupe, où le nombre de positions atteignables s'effondre.
+		Chaque phase est une recherche en profondeur itérative guidée par des tables de
+		distances minimales précalculées, ce qui élague l'essentiel de l'arbre.</p>
+		<p>Ces tables sont la raison pour laquelle la page met un moment à être prête :
+		elles pèsent 18 Mo. Une fois chargées, une solution se trouve en quelques
+		dizaines de millisecondes, entièrement dans votre navigateur, sans aucun serveur.</p>
+		<p>Le cube 3D s'appuie sur la bibliothèque WebGL
+		<a href="https://www.randelshofer.ch/webcubed/" target="_blank" rel="noopener">Virtual Cube</a>
+		de Werner Randelshofer.</p>
+	</section>
+</main>
+
+<footer class="foot">
+	<span>Un projet de Pilow</span>
+	<a href="https://pilow.fr/project/rubikia">Le projet</a>
+	<a href="https://github.com/5pilow" target="_blank" rel="noopener">GitHub</a>
+	<a href="https://leekwars.com" target="_blank" rel="noopener">Leek Wars</a>
+</footer>
+
+</body>
+</html>
