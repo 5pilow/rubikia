@@ -32,7 +32,13 @@
 	<meta name="twitter:title" content="Rubik'IA, résolveur de Rubik's cube en ligne">
 	<meta name="twitter:description" content="Entrez les couleurs de votre Rubik's cube, obtenez une solution en une vingtaine de mouvements.">
 
-	<link href="style.css" rel="stylesheet" type="text/css">
+	<!-- ATTENTION : le « ?v= » n'est pas décoratif. Le premier déploiement a servi ces
+	     deux fichiers avec un Cache-Control d'un an alors que leur nom ne porte aucune
+	     empreinte de contenu : les navigateurs qui sont passés à ce moment-là les ont
+	     épinglés et ne les redemandent plus, quels que soient les en-têtes envoyés
+	     depuis. Changer l'adresse est le seul moyen de les débloquer. À bumper à chaque
+	     modification de style.css ou index.js. -->
+	<link href="style.css?v=20260730" rel="stylesheet" type="text/css">
 
 	<script src="jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
 	<!-- includeVirtualRubik écrit les balises de la bibliothèque 3D avec
@@ -41,7 +47,7 @@
 	<script type="text/javascript">includeVirtualRubik("lib3dcube");</script>
 	<!-- Le solveur (search.js et ses 18 Mo de tables) n'est PAS chargé ici : index.js
 	     va le chercher en arrière-plan pour que le cube s'affiche tout de suite. -->
-	<script src="index.js" type="text/javascript" defer></script>
+	<script src="index.js?v=20260730" type="text/javascript" defer></script>
 </head>
 
 <body>

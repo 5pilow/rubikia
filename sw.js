@@ -12,15 +12,19 @@
      un Cache-Control d'un an nous avait déjà fait tomber côté serveur.
 */
 
-var CACHE = 'rubikia-v1'
+var CACHE = 'rubikia-v2'
 
-// Le strict nécessaire pour que la page démarre hors ligne dès la première visite.
-// Le reste (bibliothèque 3D, modèles, nuanceurs, solveur) est mis en cache au vol.
+/* Le strict nécessaire pour que la page démarre hors ligne dès la première visite. Le
+   reste (bibliothèque 3D, modèles, nuanceurs, solveur) est mis en cache au vol.
+
+   Les « ?v= » doivent correspondre à ceux d'index.html : c'est l'adresse demandée par
+   la page qui sert de clé de cache, une entrée sans le paramètre ne serait jamais
+   trouvée. À bumper avec celui d'index.html. */
 var SHELL = [
 	'./',
 	'index.html',
-	'style.css',
-	'index.js',
+	'style.css?v=20260730',
+	'index.js?v=20260730',
 	'favicon.svg',
 	'manifest.webmanifest',
 	'jquery/jquery-2.1.1.min.js',
