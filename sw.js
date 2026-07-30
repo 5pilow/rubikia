@@ -19,7 +19,9 @@ var CACHE = 'rubikia-v2'
 
    Les « ?v= » doivent correspondre à ceux d'index.html : c'est l'adresse demandée par
    la page qui sert de clé de cache, une entrée sans le paramètre ne serait jamais
-   trouvée. À bumper avec celui d'index.html. */
+   trouvée. Ce paramètre n'a pas à être bumpé à chaque modification (l'adresse est
+   servie en no-cache et la politique ci-dessous va au réseau d'abord) ; s'il change un
+   jour dans index.html, le répercuter ici. */
 var SHELL = [
 	'./',
 	'index.html',

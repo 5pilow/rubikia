@@ -32,12 +32,13 @@
 	<meta name="twitter:title" content="Rubik'IA, résolveur de Rubik's cube en ligne">
 	<meta name="twitter:description" content="Entrez les couleurs de votre Rubik's cube, obtenez une solution en une vingtaine de mouvements.">
 
-	<!-- ATTENTION : le « ?v= » n'est pas décoratif. Le premier déploiement a servi ces
-	     deux fichiers avec un Cache-Control d'un an alors que leur nom ne porte aucune
-	     empreinte de contenu : les navigateurs qui sont passés à ce moment-là les ont
-	     épinglés et ne les redemandent plus, quels que soient les en-têtes envoyés
-	     depuis. Changer l'adresse est le seul moyen de les débloquer. À bumper à chaque
-	     modification de style.css ou index.js. -->
+	<!-- Le « ?v= » n'est pas décoratif et n'est pas non plus un numéro de version à
+	     entretenir. Le premier déploiement a servi ces deux fichiers avec un
+	     Cache-Control d'un an alors que leur nom ne porte aucune empreinte de contenu :
+	     les navigateurs passés à ce moment-là les ont épinglés et ne les redemandent
+	     plus, quels que soient les en-têtes envoyés depuis. Changer l'adresse une fois
+	     était le seul moyen de les débloquer. Inutile de le bumper ensuite : cette
+	     adresse-ci est servie en no-cache, elle se revalide donc à chaque visite. -->
 	<link href="style.css?v=20260730" rel="stylesheet" type="text/css">
 
 	<script src="jquery/jquery-2.1.1.min.js" type="text/javascript"></script>
@@ -84,10 +85,22 @@
 
 	</section>
 
+	<!-- Icônes en clair dans le balisage plutôt que posées par index.js : elles sont là
+	     dès le premier rendu, sans saut de mise en page ni dépendance au script. Seul le
+	     bouton de lecture change d'icône, c'est donc le seul géré en JavaScript. -->
 	<section class="controls">
-		<button id="scramble" type="button">Mélanger</button>
-		<button id="solve" type="button" class="primary" disabled>Résoudre</button>
-		<button id="reset" type="button">Réinitialiser</button>
+		<button id="scramble" type="button">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h4l10 12h3"/><path d="M3 18h4l10-12h3"/><path d="m18 3 3 3-3 3"/><path d="m18 15 3 3-3 3"/></svg>
+			Mélanger
+		</button>
+		<button id="solve" type="button" class="primary" disabled>
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3v4M3 5h4M6 17v4M4 19h4"/><path d="m13 3 2.4 6.6L22 12l-6.6 2.4L13 21l-2.4-6.6L4 12l6.6-2.4z"/></svg>
+			Résoudre
+		</button>
+		<button id="reset" type="button">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.9 13.5A8 8 0 1 1 12 4c2.5 0 4.8 1.1 6.3 2.9"/><path d="M19 3v5h-5"/></svg>
+			Réinitialiser
+		</button>
 	</section>
 
 	<section class="output">
@@ -100,10 +113,15 @@
 		     coup. Les pastilles sont cliquables pour se replacer dans la séquence. -->
 		<div id="playback" hidden>
 			<div class="playback-buttons">
-				<button id="prev" type="button" aria-label="Mouvement précédent">◀</button>
+				<button id="prev" type="button" aria-label="Mouvement précédent" title="Mouvement précédent">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg>
+				</button>
 				<span id="progress">0 / 0</span>
-				<button id="next" type="button" aria-label="Mouvement suivant">▶</button>
-				<button id="run" type="button">Tout dérouler</button>
+				<button id="next" type="button" aria-label="Mouvement suivant" title="Mouvement suivant">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg>
+				</button>
+				<!-- Icône et libellé posés par index.js : ce bouton bascule en Pause. -->
+				<button id="run" type="button"></button>
 			</div>
 			<div id="track"></div>
 			<p class="legend">Chaque lettre est une face vue de l'extérieur : <b>U</b> haut,

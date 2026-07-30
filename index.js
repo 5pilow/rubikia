@@ -418,6 +418,9 @@ function isSeparator(token) {
 }
 
 function setSequence(text, keepPosition) {
+	// Changer de séquence interrompt un déroulement en cours, qui ne porterait plus
+	// sur ce qui est affiché.
+	running = false
 	$('#script').val(String(text).replace(/\s+/g, ' ').trim())
 	track.tokens = currentScript().split(/\s+/).filter(function(t) { return t.length })
 	if (!keepPosition) track.position = 0
@@ -456,23 +459,35 @@ function currentScript() {
 	return $('#script').val().trim()
 }
 
+var PLAY_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5z"/></svg>'
+var PAUSE_ICON = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7.5 4.5h3.2v15H7.5zM13.3 4.5h3.2v15h-3.2z"/></svg>'
+
+// Vrai pendant un « Tout dérouler », qui s'interrompt sur demande.
+var running = false
+
 function updateButtons() {
 	$('#solve').prop('disabled', busy || !solverReady)
 	$('#scramble, #reset').prop('disabled', busy)
 	$('#prev').prop('disabled', busy || track.position === 0)
-	$('#next, #run').prop('disabled', busy || track.position >= track.tokens.length)
+	$('#next').prop('disabled', busy || track.position >= track.tokens.length)
+
+	/* Le bouton de lecture reste actionnable pendant le déroulement, puisque c'est lui
+	   qui met en pause : le verrouiller comme les autres rendrait la pause impossible. */
+	$('#run')
+		.prop('disabled', running ? false : (busy || track.position >= track.tokens.length))
+		.html((running ? PAUSE_ICON : PLAY_ICON) + (running ? 'Pause' : 'Tout dérouler'))
 }
 
 /* Avance ou recule d'un mouvement. Le modèle se met à jour tout seul : chaque
    rotation du cube 3D émet un cubeTwisted que l'écouteur reporte sur state. */
-function step(forward, duration) {
+function step(forward, duration, done) {
 	var index = forward ? track.position : track.position - 1
 
 	// On traverse les séparateurs sans rien jouer.
 	while (index >= 0 && index < track.tokens.length && isSeparator(track.tokens[index])) {
 		index += forward ? 1 : -1
 	}
-	if (index < 0 || index >= track.tokens.length) return
+	if (index < 0 || index >= track.tokens.length) { if (done) done(); return }
 
 	var token = track.tokens[index]
 	track.position = forward ? index + 1 : index
@@ -482,7 +497,41 @@ function step(forward, duration) {
 	play(forward ? token : invertMove(token), duration === undefined ? STEP_DURATION : duration, function() {
 		renderTrack()
 		if (track.position >= track.tokens.length && isSolved()) status('Cube résolu.')
+		if (done) done()
 	})
+}
+
+/* Déroule la suite de la séquence, un mouvement à la fois plutôt que d'un bloc. Deux
+   raisons : la piste et le compteur avancent en direct au lieu de sauter à la fin, et
+   on peut s'arrêter entre deux mouvements. */
+function playAll() {
+	running = true
+	updateButtons()
+
+	var advance = function() {
+		if (track.position >= track.tokens.length) {
+			running = false
+			updateButtons()
+			status(isSolved() ? 'Cube résolu.' : 'Séquence terminée.')
+			return
+		}
+		if (!running) {
+			updateButtons()
+			var left = 0
+			for (var i = track.position; i < track.tokens.length; i++) {
+				if (!isSeparator(track.tokens[i])) left++
+			}
+			status('En pause, ' + left + (left > 1 ? ' mouvements restants.' : ' mouvement restant.'))
+			return
+		}
+		step(true, SOLUTION_DURATION, advance)
+	}
+	advance()
+}
+
+function pauseAll() {
+	// Le mouvement en cours va au bout, l'arrêt se fait entre deux quarts de tour.
+	running = false
 }
 
 /* Se replacer d'un clic sur une pastille : on joue ou on défait la différence, sans
@@ -582,14 +631,10 @@ function bindEvents() {
 	})
 
 	$('#run').click(function() {
+		if (running) { pauseAll(); return }
 		if (track.position >= track.tokens.length) return
-		var rest = track.tokens.slice(track.position).filter(function(t) { return !isSeparator(t) })
-		track.position = track.tokens.length
 		status('Déroulement de la séquence…')
-		play(rest.join(' '), SOLUTION_DURATION, function() {
-			renderTrack()
-			status(isSolved() ? 'Cube résolu.' : 'Séquence terminée.')
-		})
+		playAll()
 	})
 
 	$('#reset').click(function() {

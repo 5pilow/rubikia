@@ -208,14 +208,25 @@ main {
 	margin-top: 26px;
 }
 button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
 	font: inherit;
 	font-weight: bold;
-	padding: 12px 22px;
+	padding: 12px 20px;
 	border-radius: 10px;
 	border: 1px solid var(--border);
 	background: var(--panel);
 	color: var(--text);
 	cursor: pointer;
+}
+/* Les icônes suivent la couleur du texte du bouton, donc le thème, et ne se déforment
+   pas quand le libellé s'allonge. */
+button svg {
+	width: 18px;
+	height: 18px;
+	flex-shrink: 0;
 }
 button:hover:not(:disabled) { background: var(--hover); }
 button:active:not(:disabled) { transform: translateY(1px); }
@@ -265,8 +276,11 @@ button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 #prev, #next {
 	width: 46px;
 	padding: 10px 0;
-	font-size: 15px;
 }
+#prev svg, #next svg { width: 20px; height: 20px; }
+/* Largeur figée sur celle du libellé le plus long : sans elle, le bouton rétrécit de
+   « Tout dérouler » à « Pause » et les boutons voisins sautent en pleine lecture. */
+#run { min-width: 180px; }
 #progress {
 	min-width: 72px;
 	font-variant-numeric: tabular-nums;
