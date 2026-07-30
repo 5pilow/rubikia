@@ -5,9 +5,21 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 	<meta name="description" content="Entrez les couleurs de votre Rubik's cube, obtenez une solution en une vingtaine de mouvements. Algorithme deux phases de Kociemba, exécuté dans votre navigateur. Gratuit, sans installation.">
-	<meta name="theme-color" content="#11161d">
+	<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f6fa">
+	<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#11161d">
 	<link rel="canonical" href="https://rubikia.pilow.fr/">
 	<link rel="icon" href="favicon.svg" type="image/svg+xml">
+
+	<!-- Le thème choisi est appliqué avant le premier rendu : posé depuis index.js,
+	     qui est différé, la page clignoterait dans l'autre thème au chargement. -->
+	<script type="text/javascript">
+		(function() {
+			try {
+				var choix = localStorage.getItem('rubikia.theme')
+				if (choix === 'light' || choix === 'dark') document.documentElement.setAttribute('data-theme', choix)
+			} catch (e) { /* navigation privée : on reste sur le thème du système */ }
+		})()
+	</script>
 
 	<meta property="og:type" content="website">
 	<meta property="og:site_name" content="Rubik'IA">
@@ -33,6 +45,8 @@
 <body>
 
 <header>
+	<!-- L'icône et le libellé sont posés par index.js selon le thème courant. -->
+	<button id="theme" type="button" title="Thème"></button>
 	<h1>Rubik'IA</h1>
 	<p class="tagline">Donnez-lui les couleurs de votre Rubik's cube, il vous rend une solution en une vingtaine de mouvements.</p>
 </header>

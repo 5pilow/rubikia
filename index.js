@@ -334,6 +334,42 @@ function inject(url, done, fail) {
 	document.head.appendChild(script)
 }
 
+/* ----------------------------------------------------------------------- Thème */
+
+/* Trois états, dans cet ordre au clic : automatique (on suit le système), clair,
+   sombre. Le choix explicite est mémorisé et pose data-theme sur <html>, ce qui prime
+   sur la requête média ; en automatique on retire l'attribut et le CSS reprend la
+   main, y compris si le système change de thème en cours de route. */
+var THEME_CYCLE = { auto: 'light', light: 'dark', dark: 'auto' }
+var THEME_LABELS = { auto: 'automatique', light: 'clair', dark: 'sombre' }
+var THEME_ICONS = {
+	auto: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor" stroke="none"/></svg>',
+	light: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg>',
+	dark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.5A8.6 8.6 0 0 1 9.5 3.5a8.6 8.6 0 1 0 11 11z"/></svg>'
+}
+
+function storedTheme() {
+	try {
+		var choice = localStorage.getItem('rubikia.theme')
+		return choice === 'light' || choice === 'dark' ? choice : 'auto'
+	} catch (e) {
+		return 'auto'
+	}
+}
+
+function applyTheme(theme) {
+	if (theme === 'auto') document.documentElement.removeAttribute('data-theme')
+	else document.documentElement.setAttribute('data-theme', theme)
+
+	try {
+		if (theme === 'auto') localStorage.removeItem('rubikia.theme')
+		else localStorage.setItem('rubikia.theme', theme)
+	} catch (e) { /* navigation privée : le choix ne survivra pas au rechargement */ }
+
+	var label = 'Thème ' + THEME_LABELS[theme] + ', cliquer pour changer'
+	$('#theme').html(THEME_ICONS[theme]).attr({ 'aria-label': label, title: label })
+}
+
 /* ------------------------------------------------------------------- Interface */
 
 // Messages du solveur, tels que documentés en tête de search.js.
@@ -398,6 +434,10 @@ function solve() {
 }
 
 function bindEvents() {
+	$('#theme').click(function() {
+		applyTheme(THEME_CYCLE[storedTheme()])
+	})
+
 	$('#colors .color').click(function() {
 		currentColor = $(this).attr('data-face')
 		$('#colors .color').removeClass('selected')
@@ -479,6 +519,7 @@ function bindTouch() {
 /* ------------------------------------------------------------------ Démarrage */
 
 $(function() {
+	applyTheme(storedTheme())
 	buildNet()
 	renderNet()
 	bindEvents()

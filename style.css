@@ -1,16 +1,60 @@
 /* Rubik'IA — habillage. Le fond du canvas WebGL est transparent (backgroundColor
    [0,0,0,0] dans cubeattributes.js), le cube se pose donc directement sur la page. */
 
+/* Thème clair par défaut, sombre si le système le demande, et un choix manuel qui
+   prime dans les deux sens via data-theme sur <html>. Le bloc sombre est écrit deux
+   fois exprès : CSS ne sait pas réutiliser un groupe de déclarations, et une seule
+   des deux formes ne suffirait pas (la requête média ne couvre pas le choix manuel,
+   et l'attribut seul ne couvre pas le suivi automatique du système). */
 :root {
 	--accent: #ffd500;
+	--accent-hover: #ffe14d;
+	--on-accent: #1a1500;
+	--bg: #f4f6fa;
+	--panel: #ffffff;
+	--border: rgba(16, 24, 40, .16);
+	--text: #16202e;
+	--muted: #5a6b81;
+	--prose: #33415a;
+	--placeholder: #93a1b3;
+	--error: #b42318;
+	--link: #1257a8;
+	--hover: #eef2f8;
+	color-scheme: light;
+
+	/* Taille d'une facette du patron : c'est elle qui fait tenir le patron sur un
+	   téléphone comme sur un écran large. */
+	--tile: clamp(15px, 5.6vw, 34px);
+}
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #11161d;
+		--panel: #171e27;
+		--border: rgba(255, 255, 255, .12);
+		--text: #e8edf4;
+		--muted: #8fa3bb;
+		--prose: #cfd8e4;
+		--placeholder: #5d6d80;
+		--error: #ff8b7d;
+		--link: #7ab8ff;
+		--hover: #202a36;
+		color-scheme: dark;
+	}
+}
+
+:root[data-theme="dark"] {
 	--bg: #11161d;
 	--panel: #171e27;
 	--border: rgba(255, 255, 255, .12);
 	--text: #e8edf4;
 	--muted: #8fa3bb;
-	/* Taille d'une facette du patron : c'est elle qui fait tenir le patron sur un
-	   téléphone comme sur un écran large. */
-	--tile: clamp(15px, 5.6vw, 34px);
+	--prose: #cfd8e4;
+	--placeholder: #5d6d80;
+	--error: #ff8b7d;
+	--link: #7ab8ff;
+	--hover: #202a36;
+	color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -25,9 +69,28 @@ body {
 }
 
 header {
+	position: relative;
 	text-align: center;
 	padding: 32px 0 8px;
 }
+
+/* Bascule de thème : posée dans le coin, elle ne doit pas décaler le titre centré. */
+#theme {
+	position: absolute;
+	top: 16px;
+	right: 0;
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	color: var(--muted);
+}
+#theme:hover { color: var(--text); }
+#theme svg { width: 20px; height: 20px; }
+
 h1 {
 	margin: 0;
 	font-size: clamp(30px, 8vw, 44px);
@@ -154,15 +217,15 @@ button {
 	color: var(--text);
 	cursor: pointer;
 }
-button:hover:not(:disabled) { background: #202a36; }
+button:hover:not(:disabled) { background: var(--hover); }
 button:active:not(:disabled) { transform: translateY(1px); }
 button:disabled { opacity: .45; cursor: default; }
 button.primary {
 	background: var(--accent);
 	border-color: var(--accent);
-	color: #1a1500;
+	color: var(--on-accent);
 }
-button.primary:hover:not(:disabled) { background: #ffe14d; }
+button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 
 .output {
 	margin: 22px auto 0;
@@ -186,14 +249,14 @@ button.primary:hover:not(:disabled) { background: #ffe14d; }
 	color: var(--text);
 }
 #script:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
-#script::placeholder { font-weight: normal; letter-spacing: 0; color: #5d6d80; }
+#script::placeholder { font-weight: normal; letter-spacing: 0; color: var(--placeholder); }
 #status {
 	margin-top: 6px;
 	font-size: 14px;
 	color: var(--muted);
 	min-height: 22px;
 }
-#status.error { color: #ff8b7d; }
+#status.error { color: var(--error); }
 
 #settings {
 	max-width: 760px;
@@ -235,7 +298,7 @@ button.primary:hover:not(:disabled) { background: #ffe14d; }
 .about {
 	max-width: 760px;
 	margin: 40px auto 0;
-	color: #cfd8e4;
+	color: var(--prose);
 }
 .about h2 {
 	font-size: 15px;
@@ -243,7 +306,7 @@ button.primary:hover:not(:disabled) { background: #ffe14d; }
 	letter-spacing: 1.2px;
 	color: var(--muted);
 }
-.about a, .foot a { color: #7ab8ff; }
+.about a, .foot a { color: var(--link); }
 
 .foot {
 	max-width: 760px;
@@ -255,9 +318,9 @@ button.primary:hover:not(:disabled) { background: #ffe14d; }
 	gap: 6px 16px;
 	justify-content: center;
 	font-size: 13px;
-	color: #8595a8;
+	color: var(--muted);
 }
-.foot a { color: #8595a8; }
+.foot a { color: var(--muted); }
 
 /* Sur un écran étroit le cube 3D et le patron s'empilent : on resserre les marges
    pour que les boutons restent visibles sans défiler jusqu'en bas. */
