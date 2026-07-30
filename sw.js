@@ -30,7 +30,13 @@ var SHELL = [
 	'favicon.svg',
 	'manifest.webmanifest',
 	'jquery/jquery-2.1.1.min.js',
-	'lib3dcube/virtualrubik.js'
+	'lib3dcube/virtualrubik.js',
+	// Vignettes du bas de page : 50 Ko à trois, mais elles sont en chargement paresseux
+	// et donc jamais demandées si le visiteur ne descend pas. Sans ce préchargement, la
+	// page aurait des images cassées hors ligne.
+	'card-leek-wars.webp',
+	'card-flag-run.webp',
+	'card-monster-truck.webp'
 ]
 
 self.addEventListener('install', function(event) {

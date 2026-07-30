@@ -412,8 +412,8 @@ button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 .card {
 	display: flex;
 	flex-direction: column;
-	gap: 6px;
-	padding: 16px 18px;
+	/* overflow caché : sans lui, les angles de la vignette dépassent du coin arrondi. */
+	overflow: hidden;
 	border: 1px solid var(--border);
 	border-radius: 12px;
 	background: var(--panel);
@@ -423,6 +423,24 @@ button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 .card:hover {
 	background: var(--hover);
 	border-color: var(--accent);
+}
+.card-image {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 9;
+	object-fit: cover;
+	/* Fond posé sous l'image : évite un rectangle blanc le temps du chargement. */
+	background: var(--bg);
+	border-bottom: 1px solid var(--border);
+}
+.card:hover .card-image { opacity: .92; }
+.card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	flex-grow: 1;
+	padding: 14px 18px 16px;
 }
 .card-title {
 	font-weight: bold;

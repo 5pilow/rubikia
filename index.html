@@ -172,21 +172,34 @@
 
 <section class="more">
 	<h2>Mes autres projets</h2>
+	<!-- Vignettes en WebP, 560x315 pour rester nettes sur écran à forte densité, une
+	     vingtaine de kilo-octets chacune. width et height sont déclarés pour que la
+	     place soit réservée avant le chargement, et loading="lazy" parce que ce bloc
+	     est tout en bas de la page. -->
 	<div class="cards">
 		<a class="card" href="https://leekwars.com" target="_blank" rel="noopener">
-			<span class="card-title">Leek Wars</span>
-			<span class="card-text">Programmez l'intelligence artificielle d'un poireau et envoyez-le se battre en tournoi. Un vrai langage à apprendre, et des adversaires bien vivants.</span>
-			<span class="card-link">leekwars.com</span>
+			<img class="card-image" src="card-leek-wars.webp" width="560" height="315" loading="lazy" decoding="async" alt="La page d'accueil de Leek Wars, où l'on crée son poireau">
+			<span class="card-body">
+				<span class="card-title">Leek Wars</span>
+				<span class="card-text">Programmez l'intelligence artificielle d'un poireau et envoyez-le se battre en tournoi. Un vrai langage à apprendre, et des adversaires bien vivants.</span>
+				<span class="card-link">leekwars.com</span>
+			</span>
 		</a>
 		<a class="card" href="https://flagrun.pilow.fr" target="_blank" rel="noopener">
-			<span class="card-title">Flag Run</span>
-			<span class="card-text">Reconnaissez les drapeaux du monde le plus vite possible. Défi du jour, classements, et ça marche aussi hors ligne.</span>
-			<span class="card-link">flagrun.pilow.fr</span>
+			<img class="card-image" src="card-flag-run.webp" width="560" height="315" loading="lazy" decoding="async" alt="L'accueil de Flag Run, avec le défi du jour et les continents">
+			<span class="card-body">
+				<span class="card-title">Flag Run</span>
+				<span class="card-text">Reconnaissez les drapeaux du monde le plus vite possible. Défi du jour, classements, et ça marche aussi hors ligne.</span>
+				<span class="card-link">flagrun.pilow.fr</span>
+			</span>
 		</a>
 		<a class="card" href="https://monster-truck.pilow.fr" target="_blank" rel="noopener">
-			<span class="card-title">Monster Truck</span>
-			<span class="card-text">Un camion, un terrain vallonné, aucun objectif. Physique Bullet et rendu WebGL, directement dans le navigateur.</span>
-			<span class="card-link">monster-truck.pilow.fr</span>
+			<img class="card-image" src="card-monster-truck.webp" width="560" height="315" loading="lazy" decoding="async" alt="Un monster truck rouge sur un terrain vallonné, devant une pile de caisses">
+			<span class="card-body">
+				<span class="card-title">Monster Truck</span>
+				<span class="card-text">Un camion, un terrain vallonné, aucun objectif. Physique Bullet et rendu WebGL, directement dans le navigateur.</span>
+				<span class="card-link">monster-truck.pilow.fr</span>
+			</span>
 		</a>
 	</div>
 </section>
