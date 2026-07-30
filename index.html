@@ -9,6 +9,8 @@
 	<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#11161d">
 	<link rel="canonical" href="https://rubikia.pilow.fr/">
 	<link rel="icon" href="favicon.svg" type="image/svg+xml">
+	<link rel="apple-touch-icon" href="icon-192.png">
+	<link rel="manifest" href="manifest.webmanifest">
 
 	<!-- Le thème choisi est appliqué avant le premier rendu : posé depuis index.js,
 	     qui est différé, la page clignoterait dans l'autre thème au chargement. -->
@@ -56,7 +58,7 @@
 
 		<div class="cube">
 			<canvas id="canvas" class="virtualrubik" width="500" height="500"></canvas>
-			<p class="hint">Glissez sur le cube pour le faire pivoter et voir les faces cachées.</p>
+			<p class="hint">Glissez sur une face pour la tourner, à côté du cube pour l'orienter.</p>
 		</div>
 
 		<div class="net">
@@ -135,7 +137,9 @@
 		distances minimales précalculées, ce qui élague l'essentiel de l'arbre.</p>
 		<p>Ces tables sont la raison pour laquelle la page met un moment à être prête :
 		elles pèsent 18 Mo. Une fois chargées, une solution se trouve en quelques
-		dizaines de millisecondes, entièrement dans votre navigateur, sans aucun serveur.</p>
+		dizaines de millisecondes, entièrement dans votre navigateur, sans aucun serveur.
+		Elles restent en cache : le site s'installe et fonctionne <strong>hors ligne</strong>,
+		solveur compris.</p>
 		<p>Le cube 3D s'appuie sur la bibliothèque WebGL
 		<a href="https://www.randelshofer.ch/webcubed/" target="_blank" rel="noopener">Virtual Cube</a>
 		de Werner Randelshofer.</p>

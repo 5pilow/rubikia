@@ -608,7 +608,7 @@ function bindEvents() {
 		else if (event.key === 'ArrowLeft') { step(false); event.preventDefault() }
 	})
 
-	bindTouch()
+	bindPointer()
 
 	// La bibliothèque ne se redimensionne pas seule, cf. fitCanvas().
 	var pending = null
@@ -618,22 +618,188 @@ function bindEvents() {
 	})
 }
 
-/* La bibliothèque de 2016 n'écoute que la souris (mousedown/mousemove/mouseup, cf.
-   virtualrubik.js) : au doigt, le cube était complètement inerte. On lui relaie donc
-   les événements tactiles sous la forme qu'elle attend. */
-function bindTouch() {
-	var forward = function(handler) {
-		return function(event) {
-			var touch = event.touches[0] || event.changedTouches[0]
-			if (!touch || !cube) return
-			event.preventDefault()
-			cube[handler]({ clientX: touch.clientX, clientY: touch.clientY })
-		}
+/* ------------------------------------------ Tourner une face à la souris ou au doigt */
+
+/* La bibliothèque de 2016 ne sait que faire pivoter la VUE. Elle calcule pourtant déjà
+   l'intersection du curseur avec le cube (mouseIntersectionTest, qui renvoie la
+   facette touchée et le point d'impact) sans jamais s'en servir pour tourner quoi que
+   ce soit : on part de là.
+
+   Principe : on retient la facette saisie, puis à chaque déplacement on intersecte le
+   rayon du curseur avec le PLAN de cette facette. L'écart entre les deux points
+   d'impact est un déplacement exprimé dans le repère du cube, qu'il suffit de projeter
+   sur les deux axes de ce plan. L'axe dominant donne la direction du geste. Aucun
+   calcul de projection écran, donc rien qui dépende de l'orientation de la vue. */
+
+var GRAB_THRESHOLD = 0.16 // part de la demi-arête à parcourir avant de tourner
+var GRAB_DURATION = 180   // ms d'animation pour un tour fait à la main
+
+var grab = null
+
+// Rayon du curseur, dans le repère du cube. Même construction que la bibliothèque.
+function modelRay(clientX, clientY) {
+	var rect = canvas.getBoundingClientRect()
+	var raster = new J3DIVector3(clientX - rect.left, clientY - rect.top, 0)
+	var camera = new J3DIVector3(
+		(raster[0] - cube.width / 2) / cube.width * 2,
+		(raster[1] - cube.height / 2) / -cube.height * 2, 0)
+
+	var world = new J3DIVector3(camera)
+	world.multVecMatrix(cube.rasterToCameraMatrix)
+
+	var inverseWorld = new J3DIMatrix4(cube.world.matrix)
+	inverseWorld.invert()
+
+	var target = new J3DIVector3(world)
+	target.multVecMatrix(inverseWorld)
+
+	var origin = new J3DIVector3()
+	origin.load(cube.camPos)
+	origin.multVecMatrix(inverseWorld)
+
+	return {
+		origin: [origin[0], origin[1], origin[2]],
+		direction: [target[0] - origin[0], target[1] - origin[1], target[2] - origin[2]]
 	}
-	canvas.addEventListener('touchstart', forward('onMouseDown'), { passive: false })
-	canvas.addEventListener('touchmove', forward('onMouseMove'), { passive: false })
-	canvas.addEventListener('touchend', forward('onMouseUp'), { passive: false })
-	canvas.addEventListener('touchcancel', function() { if (cube) cube.isMouseDrag = false }, { passive: false })
+}
+
+// Point d'impact du rayon sur le plan d'une facette, dans le repère du cube.
+function hitOnPlane(clientX, clientY, axis, sign) {
+	var ray = modelRay(clientX, clientY)
+	if (Math.abs(ray.direction[axis]) < 1e-9) return null
+	var t = (sign * cube.cubeSize / 2 - ray.origin[axis]) / ray.direction[axis]
+	if (t <= 0) return null
+	return [
+		ray.origin[0] + ray.direction[0] * t,
+		ray.origin[1] + ray.direction[1] * t,
+		ray.origin[2] + ray.direction[2] * t
+	]
+}
+
+/* Renvoie vrai si le geste part du cube : dans ce cas il tournera une face, et
+   l'appelant doit empêcher la bibliothèque de faire pivoter la vue. */
+function beginGrab(clientX, clientY) {
+	grab = null
+	if (!cube || busy) return false
+
+	var hit = cube.mouseIntersectionTest({ clientX: clientX, clientY: clientY })
+	if (!hit) return false
+
+	// face : 0 à 2 pour les côtés négatifs des axes x, y, z ; 3 à 5 pour les positifs.
+	var axis = hit.face % 3
+	var sign = hit.face < 3 ? -1 : 1
+	var start = hitOnPlane(clientX, clientY, axis, sign)
+	if (!start) return false
+
+	grab = { axis: axis, sign: sign, start: start }
+	return true
+}
+
+function moveGrab(clientX, clientY) {
+	if (!grab || busy) return
+	var now = hitOnPlane(clientX, clientY, grab.axis, grab.sign)
+	if (!now) return
+
+	var half = cube.cubeSize / 2
+
+	// Des deux axes du plan de la facette, on garde celui le plus parcouru.
+	var best = null
+	for (var axis = 0; axis < 3; axis++) {
+		if (axis === grab.axis) continue
+		var travel = (now[axis] - grab.start[axis]) / half
+		if (!best || Math.abs(travel) > Math.abs(best.travel)) best = { axis: axis, travel: travel }
+	}
+	if (!best || Math.abs(best.travel) < GRAB_THRESHOLD) return
+
+	/* L'axe de rotation est perpendiculaire à la normale de la facette et à la
+	   direction du geste : c'est leur produit vectoriel. Le sens de rotation est
+	   l'opposé du signe obtenu (vérifié sur les deux cas de référence : pousser la face
+	   avant vers la droite tourne la tranche horizontale, la pousser vers le haut
+	   tourne la tranche verticale dans le sens d'un R). */
+	var normal = [0, 0, 0]; normal[grab.axis] = grab.sign
+	var gesture = [0, 0, 0]; gesture[best.axis] = best.travel > 0 ? 1 : -1
+	var cross = [
+		normal[1] * gesture[2] - normal[2] * gesture[1],
+		normal[2] * gesture[0] - normal[0] * gesture[2],
+		normal[0] * gesture[1] - normal[1] * gesture[0]
+	]
+	var rotationAxis = cross[0] !== 0 ? 0 : (cross[1] !== 0 ? 1 : 2)
+	var angle = cross[rotationAxis] > 0 ? -1 : 1
+
+	// Tranche saisie, repérée le long de l'axe de rotation.
+	var coordinate = grab.start[rotationAxis] / half
+	var layerMask = coordinate < -1 / 3 ? 1 : (coordinate > 1 / 3 ? 4 : 2)
+
+	grab = null
+
+	/* Tourner à la main invalide la séquence affichée, qui avait été calculée pour un
+	   autre cube : la laisser serait trompeur. */
+	if (track.tokens.length) {
+		setSequence('')
+		status('Le cube a changé, relancez la résolution.')
+	}
+
+	cube.cube3d.attributes.twistDuration = GRAB_DURATION
+	cube.cube.transform(rotationAxis, layerMask, angle)
+}
+
+function endGrab() {
+	grab = null
+}
+
+function bindPointer() {
+	/* En capture sur le document : les écouteurs de la bibliothèque sont posés sur le
+	   canvas, donc en aval. Quand le geste part du cube, on arrête la propagation et
+	   elle ne verra jamais l'appui, ce qui l'empêche de faire pivoter la vue. */
+	document.addEventListener('mousedown', function(event) {
+		if (event.target !== canvas || event.button !== 0) return
+		if (beginGrab(event.clientX, event.clientY)) {
+			event.stopPropagation()
+			event.preventDefault()
+		}
+	}, true)
+
+	document.addEventListener('mousemove', function(event) {
+		if (grab) moveGrab(event.clientX, event.clientY)
+	})
+	document.addEventListener('mouseup', endGrab)
+
+	/* Au doigt, rien n'existait : la bibliothèque n'écoute que la souris. On lui relaie
+	   les événements tactiles sous la forme qu'elle attend, sauf quand le geste part du
+	   cube, où c'est nous qui tournons la face. */
+	var touchPoint = function(event) {
+		return event.touches[0] || event.changedTouches[0]
+	}
+
+	canvas.addEventListener('touchstart', function(event) {
+		var touch = touchPoint(event)
+		if (!touch || !cube) return
+		event.preventDefault()
+		if (!beginGrab(touch.clientX, touch.clientY)) {
+			cube.onMouseDown({ clientX: touch.clientX, clientY: touch.clientY })
+		}
+	}, { passive: false })
+
+	canvas.addEventListener('touchmove', function(event) {
+		var touch = touchPoint(event)
+		if (!touch || !cube) return
+		event.preventDefault()
+		if (grab) moveGrab(touch.clientX, touch.clientY)
+		else cube.onMouseMove({ clientX: touch.clientX, clientY: touch.clientY })
+	}, { passive: false })
+
+	canvas.addEventListener('touchend', function(event) {
+		var touch = touchPoint(event)
+		if (!cube) return
+		event.preventDefault()
+		if (grab) endGrab()
+		else if (touch) cube.onMouseUp({ clientX: touch.clientX, clientY: touch.clientY })
+	}, { passive: false })
+
+	canvas.addEventListener('touchcancel', function() {
+		endGrab()
+		if (cube) cube.isMouseDrag = false
+	}, { passive: false })
 }
 
 /* ------------------------------------------------------------------ Démarrage */
@@ -664,6 +830,18 @@ $(function() {
 
 	setSequence('')
 	loadSolver()
+	registerServiceWorker()
 })
+
+/* Installable et utilisable hors ligne : une fois les tables du solveur en cache, le
+   site n'a plus besoin du réseau du tout. Voir sw.js pour les politiques de cache. */
+function registerServiceWorker() {
+	if (!('serviceWorker' in navigator)) return
+	// Un service worker exige un contexte sécurisé ; localhost en fait partie.
+	if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') return
+	navigator.serviceWorker.register('sw.js').catch(function() {
+		/* Sans lui le site marche normalement, simplement pas hors ligne. */
+	})
+}
 
 })()
