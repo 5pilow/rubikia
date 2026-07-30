@@ -388,6 +388,64 @@ button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 }
 .about a, .foot a { color: var(--link); }
 
+/* ---------- Renvoi vers les autres projets ---------- */
+
+.more {
+	max-width: 900px;
+	margin: 48px auto 0;
+}
+.more h2 {
+	font-size: 15px;
+	text-transform: uppercase;
+	letter-spacing: 1.2px;
+	color: var(--muted);
+	text-align: center;
+}
+.cards {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 14px;
+	margin-top: 16px;
+}
+/* Chaque carte est un lien entier, pas seulement son titre : la zone cliquable
+   couvre tout le bloc, ce qui compte surtout au doigt. */
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px 18px;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	background: var(--panel);
+	color: inherit;
+	text-decoration: none;
+}
+.card:hover {
+	background: var(--hover);
+	border-color: var(--accent);
+}
+.card-title {
+	font-weight: bold;
+	font-size: 17px;
+	color: var(--text);
+}
+.card-text {
+	font-size: 14px;
+	line-height: 1.5;
+	color: var(--prose);
+	flex-grow: 1;
+}
+.card-link {
+	font-size: 13px;
+	color: var(--link);
+	overflow-wrap: anywhere;
+}
+
+/* Sous 700 px les trois colonnes deviendraient illisibles : on empile. */
+@media (max-width: 700px) {
+	.cards { grid-template-columns: 1fr; }
+}
+
 .foot {
 	max-width: 760px;
 	margin: 36px auto 0;
