@@ -34,7 +34,8 @@ var SOLVER_FILES = ['baseStructs.js', 'FaceCube.js', 'CubieCube.js', 'CoordCube.
 
 var SCRAMBLE_LENGTH = 22
 var SCRAMBLE_DURATION = 110 // ms par mouvement pendant un mélange
-var SOLUTION_DURATION = 320 // ms par mouvement quand on déroule la solution
+var SOLUTION_DURATION = 320 // ms par mouvement quand on déroule toute la solution
+var STEP_DURATION = 260     // ms pour un seul mouvement, en pas à pas
 
 /* ---------------------------------------------------------------- Modèle du cube */
 
@@ -388,13 +389,67 @@ function status(text, isError) {
 	$('#status').text(text).toggleClass('error', !!isError)
 }
 
-function showScript(script) {
-	$('#script').val(String(script).replace(/\s+/g, ' ').trim())
-	updateButtons()
+/* ------------------------------------------------------- Lecture pas à pas */
+
+/* La séquence affichée est découpée en jetons. « position » est le nombre de jetons
+   déjà appliqués au cube : tout ce qui est avant est fait, le jeton à cette position
+   est le prochain à jouer. Le point séparateur des deux phases compte comme un jeton,
+   simplement traversé. */
+var track = { tokens: [], position: 0 }
+
+var FACE_NAMES = { U: 'du haut', D: 'du bas', L: 'de gauche', R: 'de droite', F: 'avant', B: 'arrière' }
+var TURN_NAMES = { '': 'Quart de tour horaire', '\'': 'Quart de tour anti-horaire', '2': 'Demi-tour' }
+
+function moveDescription(token) {
+	var face = FACE_NAMES[token[0]]
+	var turn = TURN_NAMES[token.slice(1)]
+	if (!face || !turn) return token
+	return turn + ' de la face ' + face
 }
 
-function moveCount(script) {
-	return String(script).split(/\s+/).filter(function(token) { return token && token !== '.' }).length
+// Inverse d'un mouvement : un demi-tour est son propre inverse.
+function invertMove(token) {
+	if (token.slice(1) === '2') return token
+	return token.slice(1) === '\'' ? token[0] : token + '\''
+}
+
+function isSeparator(token) {
+	return token === '.'
+}
+
+function setSequence(text, keepPosition) {
+	$('#script').val(String(text).replace(/\s+/g, ' ').trim())
+	track.tokens = currentScript().split(/\s+/).filter(function(t) { return t.length })
+	if (!keepPosition) track.position = 0
+	if (track.position > track.tokens.length) track.position = track.tokens.length
+	renderTrack()
+}
+
+function renderTrack() {
+	var total = 0, done = 0
+	for (var i = 0; i < track.tokens.length; i++) {
+		if (isSeparator(track.tokens[i])) continue
+		total++
+		if (i < track.position) done++
+	}
+
+	$('#playback').prop('hidden', track.tokens.length === 0)
+	$('#progress').text(done + ' / ' + total)
+
+	var container = $('#track').empty()
+	for (var j = 0; j < track.tokens.length; j++) {
+		var token = track.tokens[j]
+		if (isSeparator(token)) {
+			$('<span>').addClass('separator').text('·').attr('title', 'Fin de la première phase de l\'algorithme').appendTo(container)
+			continue
+		}
+		$('<span>')
+			.addClass('move' + (j < track.position ? ' done' : (j === track.position ? ' current' : '')))
+			.attr({ 'data-index': j, title: moveDescription(token) })
+			.text(token)
+			.appendTo(container)
+	}
+	updateButtons()
 }
 
 function currentScript() {
@@ -404,12 +459,55 @@ function currentScript() {
 function updateButtons() {
 	$('#solve').prop('disabled', busy || !solverReady)
 	$('#scramble, #reset').prop('disabled', busy)
-	$('#run').prop('disabled', busy || moveCount(currentScript()) === 0)
+	$('#prev').prop('disabled', busy || track.position === 0)
+	$('#next, #run').prop('disabled', busy || track.position >= track.tokens.length)
+}
+
+/* Avance ou recule d'un mouvement. Le modèle se met à jour tout seul : chaque
+   rotation du cube 3D émet un cubeTwisted que l'écouteur reporte sur state. */
+function step(forward, duration) {
+	var index = forward ? track.position : track.position - 1
+
+	// On traverse les séparateurs sans rien jouer.
+	while (index >= 0 && index < track.tokens.length && isSeparator(track.tokens[index])) {
+		index += forward ? 1 : -1
+	}
+	if (index < 0 || index >= track.tokens.length) return
+
+	var token = track.tokens[index]
+	track.position = forward ? index + 1 : index
+	// Le surlignage suit le clic tout de suite ; l'attendre la fin de l'animation
+	// donnait l'impression que le bouton n'avait pas répondu.
+	renderTrack()
+	play(forward ? token : invertMove(token), duration === undefined ? STEP_DURATION : duration, function() {
+		renderTrack()
+		if (track.position >= track.tokens.length && isSolved()) status('Cube résolu.')
+	})
+}
+
+/* Se replacer d'un clic sur une pastille : on joue ou on défait la différence, sans
+   animation, sinon un saut de quinze mouvements durerait cinq secondes. */
+function seek(target) {
+	var moves = []
+	while (track.position < target) {
+		if (!isSeparator(track.tokens[track.position])) moves.push(track.tokens[track.position])
+		track.position++
+	}
+	while (track.position > target) {
+		track.position--
+		if (!isSeparator(track.tokens[track.position])) moves.push(invertMove(track.tokens[track.position]))
+	}
+	if (!moves.length) { renderTrack(); return }
+
+	play(moves.join(' '), 0, function() {
+		renderTrack()
+		status(track.position >= track.tokens.length && isSolved() ? 'Cube résolu.' : '')
+	})
 }
 
 function solve() {
 	if (isSolved()) {
-		showScript('')
+		setSequence('')
 		status('Ce cube est déjà résolu.')
 		return
 	}
@@ -424,13 +522,14 @@ function solve() {
 
 	var error = /^Error (\d)/.exec(solution)
 	if (error) {
-		showScript('')
+		setSequence('')
 		status('Ce cube n\'est pas résolvable : ' + (ERRORS[error[1]] || solution), true)
 		return
 	}
 
-	showScript(solution)
-	status(moveCount(solution) + ' mouvements, trouvés en ' + elapsed + ' ms. Le point sépare les deux phases de l\'algorithme.')
+	setSequence(solution)
+	var count = track.tokens.filter(function(t) { return !isSeparator(t) }).length
+	status(count + ' mouvements, trouvés en ' + elapsed + ' ms. Avancez coup par coup avec les flèches.')
 }
 
 function bindEvents() {
@@ -452,13 +551,13 @@ function bindEvents() {
 		renderNet()
 		// Le cube 3D a pu être tourné depuis : on le remet à plat avant de repeindre.
 		resync3D()
-		showScript('')
+		setSequence('')
 		status('')
 	})
 
 	$('#scramble').click(function() {
 		var scramble = randomScramble(SCRAMBLE_LENGTH)
-		showScript('')
+		setSequence('')
 		status('Mélange : ' + scramble)
 		play(scramble, SCRAMBLE_DURATION, function() {
 			status('Mélange de ' + SCRAMBLE_LENGTH + ' mouvements. À vous, ou cliquez sur Résoudre.')
@@ -467,15 +566,28 @@ function bindEvents() {
 
 	$('#solve').click(solve)
 
-	// La séquence est modifiable : on peut taper la sienne et l'exécuter.
-	$('#script').on('input', updateButtons)
+	// La séquence reste modifiable : on peut taper la sienne et la dérouler. La toucher
+	// remet la lecture au début, sans rien jouer sur le cube.
+	$('#script').on('input', function() { setSequence($(this).val()) })
+
+	$('#prev').click(function() { step(false) })
+	$('#next').click(function() { step(true) })
+
+	$('#track').on('click', '.move', function() {
+		if (busy) return
+		var index = +$(this).attr('data-index')
+		// Cliquer la pastille courante la joue, cliquer une pastille déjà faite revient
+		// juste avant elle.
+		seek(index < track.position ? index : index + 1)
+	})
 
 	$('#run').click(function() {
-		var script = currentScript()
-		if (!script) return
-		status('Exécution de la séquence…')
-		play(script, SOLUTION_DURATION, function() {
-			showScript('')
+		if (track.position >= track.tokens.length) return
+		var rest = track.tokens.slice(track.position).filter(function(t) { return !isSeparator(t) })
+		track.position = track.tokens.length
+		status('Déroulement de la séquence…')
+		play(rest.join(' '), SOLUTION_DURATION, function() {
+			renderTrack()
 			status(isSolved() ? 'Cube résolu.' : 'Séquence terminée.')
 		})
 	})
@@ -484,8 +596,16 @@ function bindEvents() {
 		state = solvedState()
 		renderNet()
 		resync3D()
-		showScript('')
+		setSequence('')
 		status(solverReady ? '' : 'Chargement du solveur…')
+	})
+
+	/* Les flèches du clavier avancent dans la séquence, sauf pendant la saisie d'une
+	   séquence ou d'un réglage, où elles doivent déplacer le curseur. */
+	$(document).on('keydown', function(event) {
+		if ($(event.target).is('input, textarea')) return
+		if (event.key === 'ArrowRight') { step(true); event.preventDefault() }
+		else if (event.key === 'ArrowLeft') { step(false); event.preventDefault() }
 	})
 
 	bindTouch()
@@ -542,7 +662,7 @@ $(function() {
 		fitCanvas()
 	}, initial, -32, -32)
 
-	updateButtons()
+	setSequence('')
 	loadSolver()
 })
 

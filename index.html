@@ -79,15 +79,31 @@
 	<section class="controls">
 		<button id="scramble" type="button">Mélanger</button>
 		<button id="solve" type="button" class="primary" disabled>Résoudre</button>
-		<button id="run" type="button" disabled>Exécuter</button>
 		<button id="reset" type="button">Réinitialiser</button>
 	</section>
 
 	<section class="output">
-		<!-- Champ modifiable : on peut y taper sa propre séquence et l'exécuter, comme
+		<!-- Champ modifiable : on peut y taper sa propre séquence et la dérouler, comme
 		     dans la version de 2016. La notation est la notation officielle du cube. -->
 		<input id="script" type="text" spellcheck="false" autocomplete="off"
 			placeholder="U R2 F' L D…" aria-label="Séquence de mouvements">
+
+		<!-- Lecture pas à pas : avec un vrai cube dans les mains, on avance coup par
+		     coup. Les pastilles sont cliquables pour se replacer dans la séquence. -->
+		<div id="playback" hidden>
+			<div class="playback-buttons">
+				<button id="prev" type="button" aria-label="Mouvement précédent">◀</button>
+				<span id="progress">0 / 0</span>
+				<button id="next" type="button" aria-label="Mouvement suivant">▶</button>
+				<button id="run" type="button">Tout dérouler</button>
+			</div>
+			<div id="track"></div>
+			<p class="legend">Chaque lettre est une face vue de l'extérieur : <b>U</b> haut,
+			<b>D</b> bas, <b>L</b> gauche, <b>R</b> droite, <b>F</b> avant, <b>B</b> arrière.
+			Seule, elle vaut un quart de tour horaire ; suivie de <b>'</b> un quart de tour
+			dans l'autre sens ; suivie de <b>2</b> un demi-tour.</p>
+		</div>
+
 		<div id="status">Chargement du solveur…</div>
 	</section>
 

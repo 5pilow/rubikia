@@ -232,26 +232,92 @@ button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 	max-width: 760px;
 	text-align: center;
 }
-/* La séquence est un champ de saisie et non un simple affichage : on peut y écrire
-   la sienne et l'exécuter. Il est habillé pour se fondre dans la page. */
+/* La séquence est un champ de saisie et non un simple affichage : on peut y écrire la
+   sienne et la dérouler. Depuis que les pastilles de lecture reprennent la séquence
+   juste en dessous, il est volontairement discret : il sert à taper et à copier, la
+   piste sert à suivre. */
 #script {
 	width: 100%;
 	font: inherit;
-	font-size: clamp(15px, 3.4vw, 20px);
-	font-weight: bold;
-	letter-spacing: 1px;
-	word-spacing: 4px;
+	font-size: 15px;
+	letter-spacing: .5px;
+	word-spacing: 3px;
 	text-align: center;
-	padding: 10px 12px;
+	padding: 8px 12px;
 	border: 1px solid var(--border);
 	border-radius: 10px;
 	background: var(--panel);
-	color: var(--text);
+	color: var(--muted);
 }
+#script:focus { color: var(--text); }
 #script:focus { outline: 2px solid var(--accent); outline-offset: 2px; }
 #script::placeholder { font-weight: normal; letter-spacing: 0; color: var(--placeholder); }
+/* ---------- Lecture pas à pas ---------- */
+
+#playback { margin-top: 12px; }
+
+.playback-buttons {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+#prev, #next {
+	width: 46px;
+	padding: 10px 0;
+	font-size: 15px;
+}
+#progress {
+	min-width: 72px;
+	font-variant-numeric: tabular-nums;
+	font-size: 14px;
+	color: var(--muted);
+}
+
+#track {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 6px;
+	margin-top: 12px;
+}
+#track .move {
+	min-width: 42px;
+	padding: 6px 8px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--panel);
+	font-weight: bold;
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+}
+#track .move:hover { background: var(--hover); }
+/* Les mouvements déjà faits s'effacent, celui à jouer est mis en avant : avec un cube
+   dans les mains, c'est la seule information qu'on cherche du regard. */
+#track .move.done { opacity: .4; }
+#track .move.current {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: var(--on-accent);
+}
+#track .separator {
+	align-self: center;
+	padding: 0 2px;
+	color: var(--muted);
+	cursor: help;
+}
+
+.legend {
+	max-width: 620px;
+	margin: 12px auto 0;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--muted);
+}
+.legend b { color: var(--text); }
+
 #status {
-	margin-top: 6px;
+	margin-top: 10px;
 	font-size: 14px;
 	color: var(--muted);
 	min-height: 22px;
@@ -327,12 +393,17 @@ button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 @media (max-width: 560px) {
 	header { padding-top: 20px; }
 	.stage { gap: 4px; }
-	/* En ligne souple, les quatre boutons se répartissaient en 3 + 1 ; une grille de
-	   deux colonnes donne un bloc franc. */
+	/* En ligne souple, les boutons se répartissaient de travers ; une grille de deux
+	   colonnes donne un bloc franc, le dernier prenant la largeur restante. */
 	.controls {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		margin-top: 18px;
 	}
+	.controls button:last-child { grid-column: 1 / -1; }
 	button { padding: 12px 10px; }
+	/* La piste doit rester lisible : on resserre les pastilles plutôt que de les
+	   laisser déborder sur quatre lignes. */
+	#track { gap: 5px; }
+	#track .move { min-width: 38px; padding: 6px 6px; }
 }
