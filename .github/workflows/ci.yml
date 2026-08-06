@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Site statique sans build : on vérifie au moins la syntaxe de nos scripts
+      # (les libs tierces jquery/ et lib3dcube/ sont exclues).
+      - name: Vérifier la syntaxe des scripts
+        run: |
+          find . -name '*.js' \
+            -not -path './jquery/*' -not -path './lib3dcube/*' \
+            -print0 | xargs -0 -r -n1 node --check
