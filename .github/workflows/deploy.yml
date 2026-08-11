@@ -1,0 +1,46 @@
+name: Deploy
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-rubikia
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Site statique, rien à construire : ce qui est dans le dépôt est ce qui est servi
+
+      # La clé n'ouvre qu'une commande forcée sur le VPS : rsync dans ~/sites/rubikia
+      # ou « deploy rubikia ». Ni shell, ni accès au reste de la machine.
+      - name: Clé de déploiement
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H 137.74.162.39 >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Envoi vers le VPS
+        run: |
+          rsync -az --delete -e "ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes" \
+            --exclude=.git --exclude=.github --exclude=README.md --exclude=LICENSE \
+            ./ pierre@137.74.162.39:sites/rubikia/
+
+      - name: Mise en service
+        run: ssh -i ~/.ssh/id_deploy -o IdentitiesOnly=yes pierre@137.74.162.39 deploy rubikia
+
+      - name: Vérifier que le site répond
+        run: |
+          set -euo pipefail
+          sleep 2
+          for p in "/" "/index.js?v=20260730" "/og.jpg"; do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' "https://rubikia.pilow.fr$p")
+            echo "rubikia.pilow.fr$p -> $code"
+            test "$code" = "200"
+          done
