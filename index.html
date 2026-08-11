@@ -28,7 +28,8 @@
 	<meta property="og:title" content="Rubik'IA, résolveur de Rubik's cube en ligne">
 	<meta property="og:description" content="Entrez les couleurs de votre Rubik's cube, obtenez une solution en une vingtaine de mouvements. Algorithme deux phases de Kociemba, exécuté dans votre navigateur.">
 	<meta property="og:url" content="https://rubikia.pilow.fr/">
-	<meta name="twitter:card" content="summary">
+	<meta property="og:image" content="https://rubikia.pilow.fr/og.jpg">
+	<meta name="twitter:card" content="summary_large_image">
 	<meta name="twitter:title" content="Rubik'IA, résolveur de Rubik's cube en ligne">
 	<meta name="twitter:description" content="Entrez les couleurs de votre Rubik's cube, obtenez une solution en une vingtaine de mouvements.">
 
@@ -49,6 +50,8 @@
 	<!-- Le solveur (search.js et ses 18 Mo de tables) n'est PAS chargé ici : index.js
 	     va le chercher en arrière-plan pour que le cube s'affiche tout de suite. -->
 	<script src="index.js?v=20260730" type="text/javascript" defer></script>
+	<!-- Statistiques d'audience : Umami auto-hébergé, sans cookie. -->
+	<script defer src="https://umami.pilow.fr/script.js" data-website-id="129d8cb6-f255-4f58-8125-07d37a0fae03"></script>
 </head>
 
 <body>
@@ -209,7 +212,105 @@
 	<a href="https://pilow.fr/project/rubikia">La fiche du projet</a>
 	<a href="https://pilow.fr" target="_blank" rel="noopener">Tous mes projets</a>
 	<a href="https://github.com/5pilow" target="_blank" rel="noopener">GitHub</a>
+	<a href="#contact" id="contact-link">Contact</a>
 </footer>
+
+<!-- Contact : en dur dans la page (pas rendu en JS) pour figurer tel quel dans le
+     HTML servi. Poste sur la boîte à messages publique de Jarvis, protégée côté
+     serveur par une limite de débit et le pot de miel ci-dessous. -->
+<dialog id="contact-dialog">
+	<h2>Contact</h2>
+	<p class="contact-hint">Un bug, une idée ? Écris-moi.</p>
+	<form id="contact-form">
+		<label>Message
+			<textarea name="message" rows="5" maxlength="4000" required></textarea>
+		</label>
+		<label>Ton email, si tu veux une réponse
+			<input name="contact" type="email" maxlength="200" autocomplete="email">
+		</label>
+		<!-- Pot de miel : invisible pour un humain, rempli par les robots. -->
+		<input id="contact-website" name="website" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+		<p id="contact-status" role="status"></p>
+		<div id="contact-actions">
+			<button type="button" id="contact-close">Fermer</button>
+			<button type="submit" id="contact-send">Envoyer</button>
+		</div>
+	</form>
+</dialog>
+<style>
+	#contact-dialog {
+		background: #161c25; color: #e8ecf2;
+		border: 1px solid #2b3442; border-radius: 12px;
+		padding: 20px 22px; width: min(92vw, 420px);
+	}
+	#contact-dialog::backdrop { background: rgba(0, 0, 0, .55); }
+	#contact-dialog h2 { margin: 0 0 4px; font-size: 18px; }
+	#contact-dialog .contact-hint { margin: 0 0 14px; font-size: 13px; color: #97a3b4; }
+	#contact-form { display: flex; flex-direction: column; gap: 12px; }
+	#contact-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #97a3b4; }
+	#contact-form textarea, #contact-form input[type='email'] {
+		font: inherit; font-size: 14px; color: #e8ecf2;
+		background: #11161d; border: 1px solid #2b3442;
+		border-radius: 8px; padding: 8px 10px; resize: vertical;
+	}
+	#contact-form textarea:focus, #contact-form input[type='email']:focus { outline: none; border-color: #4da3ff; }
+	/* Le pot de miel sort du champ de vision, sans display:none trop repérable. */
+	#contact-website { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+	#contact-status { min-height: 16px; margin: 0; font-size: 12px; text-align: center; color: #97a3b4; }
+	#contact-status.ok { color: #2ecc71; }
+	#contact-status.ko { color: #ff6b5e; }
+	#contact-actions { display: flex; gap: 10px; justify-content: flex-end; }
+	#contact-actions button {
+		font: inherit; font-size: 13px; padding: 7px 14px; border-radius: 8px;
+		border: 1px solid #2b3442; background: none; color: #e8ecf2; cursor: pointer;
+	}
+	#contact-actions button[type='submit'] { background: #4da3ff; border-color: transparent; color: #fff; }
+	#contact-actions button:disabled { opacity: .6; cursor: default; }
+</style>
+<script>
+	(function () {
+		var dialog = document.getElementById('contact-dialog')
+		var form = document.getElementById('contact-form')
+		var status = document.getElementById('contact-status')
+		var send = document.getElementById('contact-send')
+		function setStatus(text, kind) {
+			status.textContent = text
+			status.className = kind || ''
+		}
+		document.getElementById('contact-link').addEventListener('click', function (e) {
+			e.preventDefault()
+			setStatus('', '')
+			dialog.showModal()
+		})
+		document.getElementById('contact-close').addEventListener('click', function () {
+			dialog.close()
+		})
+		form.addEventListener('submit', async function (e) {
+			e.preventDefault()
+			send.disabled = true
+			setStatus('Envoi…', '')
+			try {
+				var res = await fetch('https://jarvis.pilow.fr/api/inbox/rubikia', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({
+						message: form.message.value.trim(),
+						contact: form.contact.value.trim(),
+						subject: "Rubik'IA",
+						website: form.website.value,
+					}),
+				})
+				if (!res.ok) throw new Error(String(res.status))
+				setStatus('Message envoyé, merci !', 'ok')
+				form.reset()
+			} catch (err) {
+				setStatus("Échec de l'envoi, réessaie plus tard.", 'ko')
+			} finally {
+				send.disabled = false
+			}
+		})
+	})()
+</script>
 
 </body>
 </html>
